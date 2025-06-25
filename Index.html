@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrasi Biznet Home (Database Google Sheets)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        #image-preview { width: 100%; height: auto; max-height: 220px; object-fit: contain; border-radius: 0.5rem; }
+        input[type="file"] { display: none; }
+        #crop-modal .cropper-container { margin: auto; }
+        #image-to-crop { display: block; max-width: 100%; }
+        #critical-error-banner { display: none; background-color: #fef2f2; color: #991b1b; padding: 1rem; border: 1px solid #fecaca; border-radius: 0.5rem; text-align: center; }
+        .spinner { border: 2px solid #f3f3f3; border-top: 2px solid #1390d0; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; display: inline-block; margin-right: 8px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-lg">
+        <div id="critical-error-banner"></div>
+        
+        <div id="app-content" class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 space-y-6">
+            <header class="text-center">
+                <h1 class="text-3xl font-bold text-[#1390d0] dark:text-sky-400">Registrasi Biznet Home</h1>
+                <p class="text-gray-500 dark:text-gray-400 mt-2">Isi formulir untuk melakukan pendaftaran</p>
+            </header>
+
+            <form id="data-form" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Unggah Foto KTP</label>
+                    <div id="preview-area" class="w-full p-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-center hidden"><img id="image-preview" alt="Pratinjau KTP"></div>
+                    <label for="ktp-upload" id="upload-box" class="w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        <svg class="w-10 h-10 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
+                        <span class="mt-2 text-sm text-gray-500 dark:text-gray-400">Klik untuk memilih gambar</span>
+                    </label>
+                    <input type="file" id="ktp-upload" accept="image/*">
+                    <p id="image-status" class="text-sm mt-2 text-center font-medium h-5"></p>
+                </div>
+
+                <div id="ocr-results" class="space-y-4 hidden">
+                    <div>
+                        <label for="nama" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nama Lengkap</label>
+                        <input type="text" id="nama" name="nama" readonly class="mt-1 block w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none text-gray-500 dark:text-gray-400" placeholder="Akan terisi otomatis...">
+                    </div>
+                    <div>
+                        <label for="nik" class="block text-sm font-medium text-gray-700 dark:text-gray-300">NIK</label>
+                        <input type="text" id="nik" name="nik" readonly class="mt-1 block w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none text-gray-500 dark:text-gray-400" placeholder="Akan terisi otomatis...">
+                    </div>
+                    <div>
+                        <label for="tglLahir" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tanggal Lahir</label>
+                        <input type="text" id="tglLahir" name="tglLahir" readonly class="mt-1 block w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none text-gray-500 dark:text-gray-400" placeholder="Akan terisi otomatis...">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="whatsapp" class="block text-sm font-medium text-gray-700 dark:text-gray-300">No. WhatsApp</label>
+                    <input type="tel" id="whatsapp" name="whatsapp" required class="mt-1 block w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1390d0] text-gray-900 dark:text-white" placeholder="Contoh: 081234567890">
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                    <input type="email" id="email" name="email" required class="mt-1 block w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1390d0] text-gray-900 dark:text-white" placeholder="nama@email.com">
+                </div>
+                <div>
+                    <label for="alamat" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Alamat Lengkap</label>
+                    <textarea id="alamat" name="alamat" rows="3" required class="mt-1 block w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1390d0] text-gray-900 dark:text-white" placeholder="Masukkan alamat lengkap Anda"></textarea>
+                </div>
+                <div>
+                    <button type="submit" id="submit-btn" disabled class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#1390d0] hover:bg-[#1075b0] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors">
+                        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        Buat dan Unduh PDF
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="crop-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-40 p-4"><div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-xl w-full"><h3 class="text-xl font-bold text-center text-gray-800 dark:text-white mb-4">Sesuaikan Frame KTP</h3><div class="img-container w-full h-64 md:h-80 mb-4"><img id="image-to-crop" src=""></div><div class="flex justify-between space-x-4"><button id="cancel-crop-btn" class="w-full bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-white py-2 rounded-lg hover:bg-gray-400 transition-colors">Batal</button><button id="crop-btn" class="w-full bg-[#1390d0] text-white py-2 rounded-lg hover:bg-[#1075b0] transition-colors">Potong & Gunakan</button></div></div></div>
+    <div id="notification-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4"><div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-sm mx-auto text-center"><p id="notification-message" class="text-lg text-gray-800 dark:text-white"></p><div id="modal-buttons" class="mt-4 flex flex-col sm:flex-row-reverse gap-3">
+        <button id="close-modal-btn" class="w-full bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors">Tutup</button>
+    </div></div></div>
+
+    <script type="module">
+        document.addEventListener('DOMContentLoaded', main);
+
+        function main() {
+            // --- KONFIGURASI PENTING ---
+            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyg5EZkuXB1nqUztxgIBzxmnXv4NSWZvtR9_puHysD_ooI1cnvUlM3DKAxcb3D29XfCcQ/exec";
+            const GEMINI_API_KEY = "AIzaSyDNbUhmTtdpftZq15MctBuicsGryUuq2d0";
+            // --------------------------
+
+            if (typeof Cropper === 'undefined' || typeof window.jspdf === 'undefined' || typeof qrcode === 'undefined') {
+                document.getElementById('critical-error-banner').textContent = `Pustaka penting gagal dimuat. Harap periksa koneksi dan muat ulang.`;
+                document.getElementById('critical-error-banner').style.display = 'block';
+                return;
+            }
+
+            let cropper, ktpImageBase64 = null;
+            const BLUR_THRESHOLD = 100;
+            
+            const elements = {
+                ktpUpload: document.getElementById('ktp-upload'),
+                nama: document.getElementById('nama'),
+                nik: document.getElementById('nik'),
+                tglLahir: document.getElementById('tglLahir'),
+                ocrResults: document.getElementById('ocr-results'),
+                imagePreview: document.getElementById('image-preview'),
+                imageStatus: document.getElementById('image-status'),
+                submitBtn: document.getElementById('submit-btn'),
+                dataForm: document.getElementById('data-form'),
+                uploadBox: document.getElementById('upload-box'),
+                previewArea: document.getElementById('preview-area'),
+                cropModal: document.getElementById('crop-modal'),
+                imageToCrop: document.getElementById('image-to-crop'),
+                cropBtn: document.getElementById('crop-btn'),
+                cancelCropBtn: document.getElementById('cancel-crop-btn'),
+                notificationModal: document.getElementById('notification-modal'),
+                notificationMessage: document.getElementById('notification-message'),
+                closeModalBtn: document.getElementById('close-modal-btn'),
+            };
+
+            const showCropper = (imageUrl) => {
+                elements.imageToCrop.src = imageUrl;
+                elements.cropModal.classList.remove('hidden');
+                if (cropper) cropper.destroy();
+                cropper = new Cropper(elements.imageToCrop, { aspectRatio: 85.6 / 54, viewMode: 2, dragMode: 'move', background: false, autoCropArea: 0.9 });
+            };
+    
+            const resetImageInput = () => {
+                elements.dataForm.reset();
+                elements.ktpUpload.value = '';
+                if(cropper) cropper.destroy();
+                elements.cropModal.classList.add('hidden');
+                elements.previewArea.classList.add('hidden');
+                elements.uploadBox.classList.remove('hidden');
+                elements.imageStatus.textContent = '';
+                elements.submitBtn.disabled = true;
+                ktpImageBase64 = null;
+                elements.ocrResults.classList.add('hidden');
+                ['nama', 'nik', 'tglLahir', 'whatsapp', 'email', 'alamat'].forEach(id => document.getElementById(id).value = '');
+            };
+
+            const calculateBlurScore = (imageDataUrl) => {
+                return new Promise((resolve, reject) => { const i = new Image(); i.src = imageDataUrl; i.onload = () => { const c = document.createElement('canvas'), x = c.getContext('2d', { willReadFrequently: true }); c.width = i.width; c.height = i.height; x.drawImage(i, 0, 0); const d = x.getImageData(0, 0, c.width, c.height); const g = []; for (let j = 0; j < d.data.length; j += 4) g.push(d.data[j] * 0.299 + d.data[j + 1] * 0.587 + d.data[j + 2] * 0.114); const l = [0, 1, 0, 1, -4, 1, 0, 1, 0]; let s = 0, q = 0, v = []; for (let y = 1; y < c.height - 1; y++) for (let z = 1; z < c.width - 1; z++) { let a = 0, k = 0; for (let ky = -1; ky <= 1; ky++) for (let kx = -1; kx <= 1; kx++) a += g[(y + ky) * c.width + (z + kx)] * l[k++]; v.push(a); s += a; q += a * a; } const m = s / v.length; resolve(q / v.length - m * m); }; i.onerror = reject; });
+            };
+            
+            const extractKtpData = async (base64ImageData) => {
+                // Perbaikan: Hapus pengecekan kunci API placeholder yang salah.
+                // Sekarang akan mencoba menggunakan kunci API selama tidak kosong atau placeholder default.
+                if (!GEMINI_API_KEY || GEMINI_API_KEY === "GANTI_DENGAN_API_KEY_ANDA") {
+                    elements.imageStatus.innerHTML = `<span class="text-yellow-500">Fitur OCR non-aktif: Kunci API belum diatur.</span>`;
+                    elements.ocrResults.classList.remove('hidden');
+                    elements.nama.value = 'Mode Manual';
+                    elements.nik.value = 'Mode Manual';
+                    elements.tglLahir.value = 'Mode Manual';
+                    elements.submitBtn.disabled = false;
+                    return;
+                }
+
+                elements.imageStatus.innerHTML = `<div class="spinner"></div><span>Mengekstrak data dari KTP...</span>`;
+                const prompt = `From the provided image of an Indonesian KTP (identity card), extract the following information and return it as a valid JSON object. 1. "nama": The full name. 2. "nik": The 16-digit NIK. 3. "tglLahir": The date of birth, formatted as DD-MM-YYYY. If a field is not found, return null for that specific field.`;
+                const payload = { contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: base64ImageData.split(',')[1] } }] }], generationConfig: { responseMimeType: "application/json" } };
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
+                
+                try {
+                    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`API request failed with status ${response.status}: ${errorData.error.message}`);
+                    }
+                    const result = await response.json();
+                    const textContent = result.candidates[0].content.parts[0].text;
+                    const ocrData = JSON.parse(textContent);
+                    elements.nama.value = ocrData.nama || 'Tidak terdeteksi';
+                    elements.nik.value = ocrData.nik || 'Tidak terdeteksi';
+                    elements.tglLahir.value = ocrData.tglLahir || 'Tidak terdeteksi';
+                    elements.imageStatus.innerHTML = `<span class="text-green-500">✓ Ekstraksi data berhasil.</span>`;
+                    elements.submitBtn.disabled = false;
+                } catch (error) {
+                    console.error("OCR Extraction Error:", error);
+                    elements.nama.value = 'Gagal mengekstrak';
+                    elements.nik.value = 'Gagal mengekstrak';
+                    elements.tglLahir.value = 'Gagal mengekstrak';
+                    elements.imageStatus.innerHTML = `<span class="text-red-500">Gagal mengekstrak data. Periksa Kunci API.</span>`;
+                    elements.submitBtn.disabled = false; // Aktifkan tombol agar bisa coba lagi atau manual
+                }
+            };
+
+            const generateAndDownloadPDF = (data, recordId) => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'mm', 'a4');
+                const pageW = doc.internal.pageSize.getWidth();
+                const pageH = doc.internal.pageSize.getHeight();
+                const margin = 15;
+                let yPos;
+
+                const primaryColor = '#1390d0';
+                const secondaryColor = '#e7f5fe';
+                const textColor = '#374151';
+                const grayColor = '#6b7280';
+                const whiteColor = '#ffffff';
+
+                doc.setFillColor(primaryColor);
+                doc.rect(0, 0, pageW, 35, 'F'); 
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(18);
+                doc.setTextColor(whiteColor);
+                doc.text('Bukti Pendaftaran', pageW - margin, 18, { align: 'right' });
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(18);
+                doc.text('Biznet Home', pageW - margin, 25, { align: 'right' });
+
+                yPos = 45;
+                doc.setFontSize(10);
+                doc.setTextColor(grayColor);
+                doc.text('ID Registrasi:', margin, yPos);
+                doc.setTextColor(textColor);
+                doc.setFont('helvetica', 'bold');
+                doc.text(recordId, margin + 30, yPos);
+
+                doc.setTextColor(grayColor);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Tanggal Terbit:', pageW - margin - 45, yPos);
+                doc.setTextColor(textColor);
+                doc.setFont('helvetica', 'bold');
+                doc.text(new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }), pageW - margin, yPos, { align: 'right' });
+
+                yPos += 10;
+                doc.setLineWidth(0.5);
+                doc.setDrawColor(primaryColor);
+                doc.line(margin, yPos, pageW - margin, yPos);
+
+                const addDataRow = (y, label, value) => {
+                    yPos = y;
+                    doc.setFontSize(11);
+                    doc.setTextColor(grayColor);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(label, margin, yPos + 7);
+
+                    doc.setTextColor(textColor);
+                    doc.setFont('helvetica', 'bold');
+                    const valueText = value || 'Tidak Terisi';
+                    const valueLines = doc.splitTextToSize(valueText, pageW - margin - 70);
+                    doc.text(valueLines, margin + 55, yPos + 7);
+                    
+                    yPos += (valueLines.length * 6) + 6;
+                    doc.setDrawColor(secondaryColor);
+                    doc.line(margin, yPos, pageW - margin, yPos);
+                    return yPos;
+                };
+
+                yPos += 10;
+                doc.setFillColor(secondaryColor);
+                doc.roundedRect(margin, yPos, pageW - (margin * 2), 10, 3, 3, 'F');
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(primaryColor);
+                doc.text('DATA PEMOHON', margin + 5, yPos + 7);
+                yPos += 12;
+
+                yPos = addDataRow(yPos, 'Nama Lengkap', data.nama);
+                yPos = addDataRow(yPos, 'NIK', data.nik);
+                yPos = addDataRow(yPos, 'Tanggal Lahir', data.tglLahir);
+                yPos = addDataRow(yPos, 'Alamat Email', data.email);
+                yPos = addDataRow(yPos, 'No. WhatsApp', data.whatsapp);
+                yPos = addDataRow(yPos, 'Alamat Lengkap', data.alamat);
+                
+                yPos += 10;
+                doc.setFillColor(secondaryColor);
+                doc.roundedRect(margin, yPos, pageW - (margin * 2), 10, 3, 3, 'F');
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(primaryColor);
+                doc.text('DOKUMEN & VERIFIKASI', margin + 5, yPos + 7);
+                yPos += 15;
+
+                doc.setFontSize(10);
+                doc.setTextColor(grayColor);
+                doc.text('Foto KTP Terlampir:', margin, yPos);
+                yPos += 5;
+                doc.addImage(data.ktpImageBase64, 'JPEG', margin, yPos, 85.6, 54);
+                doc.setDrawColor(grayColor);
+                doc.rect(margin, yPos, 85.6, 54, 'S');
+
+                const qr = qrcode(0, 'L');
+                qr.addData(recordId);
+                qr.make();
+                const qrImgData = qr.createDataURL(4);
+                const qrX = pageW - margin - 35;
+                const qrY = yPos + 5;
+                doc.addImage(qrImgData, 'PNG', qrX, qrY, 30, 30);
+                doc.setFontSize(8);
+                doc.setTextColor(grayColor);
+                doc.text('Pindai untuk Verifikasi', qrX + 15, qrY + 35, { align: 'center'});
+
+                yPos = pageH - 20;
+                doc.setDrawColor(primaryColor);
+                doc.line(margin, yPos, pageW - margin, yPos);
+                yPos += 8;
+                doc.setFontSize(9);
+                doc.setTextColor(grayColor);
+                doc.setFont('helvetica', 'italic');
+                doc.text('Dokumen ini diterbitkan secara otomatis oleh sistem dan sah tanpa tanda tangan basah.', pageW/2, yPos, { align: 'center' });
+
+                doc.save(`bukti-pendaftaran-biznet-${data.nik || 'user'}.pdf`);
+            };
+
+            const showNotification = (message) => {
+                elements.notificationMessage.textContent = message;
+                elements.notificationModal.classList.remove('hidden');
+            };
+
+            elements.ktpUpload.addEventListener('change', (e) => {
+                const file = e.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => showCropper(event.target.result);
+                reader.readAsDataURL(file);
+            });
+
+            elements.cancelCropBtn.addEventListener('click', resetImageInput);
+            
+            elements.cropBtn.addEventListener('click', async () => {
+                if (!cropper) return;
+                
+                elements.imageStatus.className = 'text-sm mt-2 text-center text-gray-500 dark:text-gray-400 flex items-center justify-center';
+                elements.imageStatus.innerHTML = `<div class="spinner"></div><span>Menganalisis kualitas gambar...</span>`;
+
+                const highQualityCanvas = cropper.getCroppedCanvas({ width: 800, fillColor: '#fff' });
+                ktpImageBase64 = highQualityCanvas.toDataURL('image/jpeg', 0.9);
+                
+                const analysisCanvas = document.createElement('canvas');
+                const analysisCtx = analysisCanvas.getContext('2d');
+                const analysisWidth = 200;
+                analysisCanvas.width = analysisWidth;
+                analysisCanvas.height = highQualityCanvas.height * (analysisWidth / highQualityCanvas.width);
+                analysisCtx.drawImage(highQualityCanvas, 0, 0, analysisCanvas.width, analysisCanvas.height);
+                const analysisImageDataUrl = analysisCanvas.toDataURL('image/jpeg');
+
+                elements.imagePreview.src = ktpImageBase64;
+                elements.uploadBox.classList.add('hidden');
+                elements.previewArea.classList.remove('hidden');
+                elements.cropModal.classList.add('hidden');
+                
+                try {
+                    const score = await calculateBlurScore(analysisImageDataUrl);
+                    if (score >= BLUR_THRESHOLD) {
+                        elements.ocrResults.classList.remove('hidden');
+                        await extractKtpData(ktpImageBase64);
+                    } else {
+                        elements.imageStatus.innerHTML = `<span class="text-red-500">✗ Gambar buram! Harap unggah foto yang lebih jelas.</span>`;
+                        ktpImageBase64 = null;
+                        elements.submitBtn.disabled = true;
+                    }
+                } catch (error) {
+                    console.error("Image Analysis Error:", error);
+                    elements.imageStatus.innerHTML = `<span class="text-red-500">Gagal menganalisis gambar. Coba lagi.</span>`;
+                    ktpImageBase64 = null;
+                    elements.submitBtn.disabled = true;
+                }
+            });
+
+            elements.dataForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                if (!ktpImageBase64) {
+                    showNotification('Harap unggah gambar KTP yang valid.');
+                    return;
+                }
+
+                const originalButtonHTML = elements.submitBtn.innerHTML;
+                elements.submitBtn.disabled = true;
+                elements.submitBtn.innerHTML = `<div class="spinner"></div><span>Membuat PDF...</span>`;
+
+                const formData = {
+                    nama: elements.nama.value,
+                    nik: elements.nik.value,
+                    tglLahir: elements.tglLahir.value,
+                    whatsapp: document.getElementById('whatsapp').value,
+                    email: document.getElementById('email').value,
+                    alamat: document.getElementById('alamat').value,
+                    ktpImageBase64: ktpImageBase64
+                };
+                
+                const recordId = `REG-${formData.nik || Date.now()}`;
+
+                try {
+                    generateAndDownloadPDF(formData, recordId);
+                    
+                    if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== "GANTI_DENGAN_URL_SCRIPT_ANDA") {
+                        fetch(GOOGLE_SCRIPT_URL, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            body: JSON.stringify(formData)
+                        }).catch(err => console.error("Gagal mengirim data di latar belakang:", err));
+                    } else {
+                        console.log("Pengiriman data dilewati karena GOOGLE_SCRIPT_URL belum diatur.");
+                    }
+
+                    setTimeout(() => {
+                        resetImageInput();
+                        elements.submitBtn.innerHTML = originalButtonHTML;
+                    }, 1000);
+
+                } catch(pdfError){
+                    console.error("PDF Generation Error:", pdfError);
+                    showNotification('Gagal membuat PDF. Silakan coba lagi.');
+                    elements.submitBtn.innerHTML = originalButtonHTML;
+                    elements.submitBtn.disabled = false;
+                }
+            });
+            
+            elements.closeModalBtn.addEventListener('click', () => {
+                elements.notificationModal.classList.add('hidden');
+            });
+        }
+    </script>
+</body>
+</html>
