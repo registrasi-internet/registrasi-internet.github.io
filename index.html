@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+net<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registrasi Biznet Home (Database Google Sheets)</title>
+    <title>Registrasi Mudah</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
@@ -30,8 +30,8 @@
         
         <div id="app-content" class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 space-y-6">
             <header class="text-center">
-                <h1 class="text-3xl font-bold text-[#1390d0] dark:text-sky-400">Registrasi Biznet Home</h1>
-                <p class="text-gray-500 dark:text-gray-400 mt-2">Isi formulir untuk melakukan pendaftaran</p>
+                <h1 class="text-3xl font-bold text-[#1390d0] dark:text-sky-400">Registrasi Mudah!</h1>
+                <p class="text-gray-500 dark:text-gray-400 mt-2">Wifi Internet Cepat Pontianak</p>
             </header>
 
             <form id="data-form" class="space-y-6">
@@ -218,8 +218,8 @@
                 doc.setTextColor(whiteColor);
                 doc.text('Bukti Pendaftaran', pageW - margin, 18, { align: 'right' });
                 doc.setFont('helvetica', 'normal');
-                doc.setFontSize(18);
-                doc.text('Biznet Home', pageW - margin, 25, { align: 'right' });
+                doc.setFontSize(15);
+                doc.text('Wifi Internet', pageW - margin, 25, { align: 'right' });
 
                 yPos = 45;
                 doc.setFontSize(10);
@@ -313,7 +313,7 @@
                 doc.setFont('helvetica', 'italic');
                 doc.text('Dokumen ini diterbitkan secara otomatis oleh sistem dan sah tanpa tanda tangan basah.', pageW/2, yPos, { align: 'center' });
 
-                doc.save(`bukti-pendaftaran-biznet-${data.nik || 'user'}.pdf`);
+                doc.save(`Bukti-Pendaftaran-${data.nama || 'user'}.pdf`);
             };
 
             const showNotification = (message) => {
