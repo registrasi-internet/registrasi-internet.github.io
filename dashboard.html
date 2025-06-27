@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Profesional Pendaftaran Biznet Home</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #1e90ff; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #1c82e6; }
+
+        /* Style untuk header tabel yang bisa di-sort */
+        .sortable { cursor: pointer; user-select: none; }
+        .sortable:hover { background-color: #0369a1; } /* Darker shade for hover on main header */
+        .dark .sortable:hover { background-color: #0c4a6e; }
+        .sort-icon { display: inline-block; margin-left: 5px; opacity: 0.7; }
+
+        /* Animasi Skeleton Loader */
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        .skeleton {
+            background: #f6f7f8;
+            background-image: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+            background-repeat: no-repeat;
+            background-size: 2000px 104px;
+            animation: shimmer 1.5s linear infinite;
+        }
+        .dark .skeleton {
+             background: #374151;
+             background-image: linear-gradient(to right, #374151 0%, #4b5563 20%, #374151 40%, #374151 100%);
+        }
+
+        /* Style untuk Modal */
+        #modal-backdrop { transition: opacity 0.3s ease; }
+        #modal-panel { transition: transform 0.3s ease, opacity 0.3s ease; }
+        
+        .status-select {
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            font-size: 12px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .status-select:disabled {
+            cursor: wait;
+            opacity: 0.7;
+        }
+        /* Color classes for statuses */
+        .status-Lead { background-color: #e0f2fe; color: #0c4a6e; }
+        .status-Validasi-Data { background-color: #ffedd5; color: #9a3412; }
+        .status-Payment { background-color: #fef9c3; color: #a16207; }
+        .status-Instalasi { background-color: #f3e8ff; color: #6b21a8; }
+        .status-Aktif { background-color: #dcfce7; color: #166534; }
+        .status-Batal { background-color: #fee2e2; color: #991b1b; }
+
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-sky-600 dark:text-sky-400">Dashboard Pendaftaran</h1>
+                <p class="text-gray-500 dark:text-gray-400 mt-2">Data Responden Biznet Home</p>
+            </div>
+        </header>
+
+        <!-- Skeleton Loader Section -->
+        <div id="loader" class="space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div class="h-24 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg skeleton"></div>
+                <div class="h-24 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg skeleton"></div>
+                <div class="h-24 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg skeleton"></div>
+                <div class="h-24 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg skeleton"></div>
+            </div>
+            <div class="h-96 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg skeleton"></div>
+        </div>
+
+        <div id="dashboard-content" class="hidden space-y-8">
+            <!-- Statistik Cards -->
+            <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- Pendaftar Hari Ini -->
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg flex items-center space-x-4">
+                    <div class="bg-blue-100 dark:bg-blue-900 p-3 rounded-full"><svg class="w-6 h-6 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0h18M12 12.75h.008v.008H12v-.008z" /></svg></div>
+                    <div><p class="text-gray-500 dark:text-gray-400 text-sm">Pendaftar Hari Ini</p><p id="pendaftar-hari-ini" class="text-2xl font-bold">0</p></div>
+                </div>
+                <!-- Total Responden -->
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg flex items-center space-x-4">
+                    <div class="bg-sky-100 dark:bg-sky-900 p-3 rounded-full"><svg class="w-6 h-6 text-sky-600 dark:text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.5-2.962A3.375 3.375 0 0110.5 12h3c1.41 0 2.7.753 3.375 1.845m-3.375-1.845a3.375 3.375 0 00-3.375-1.845H7.5a3.375 3.375 0 00-3.375 1.845m3.375 1.845L6.106 18.72m11.894 0A9.094 9.094 0 0118 18.72a9.094 9.094 0 01-3.741-.479m-7.5 0a9.094 9.094 0 00-3.741-.479M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></div>
+                    <div><p class="text-gray-500 dark:text-gray-400 text-sm">Total Responden</p><p id="total-responden" class="text-2xl font-bold">0</p></div>
+                </div>
+                <!-- Jumlah Lead -->
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg flex items-center space-x-4">
+                    <div class="bg-blue-100 dark:bg-blue-900 p-3 rounded-full"><svg class="w-6 h-6 text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.5 21c-2.305 0-4.47-.612-6.375-1.666z" /></svg></div>
+                    <div><p class="text-gray-500 dark:text-gray-400 text-sm">Jumlah Lead</p><p id="jumlah-lead" class="text-2xl font-bold">0</p></div>
+                </div>
+                <!-- Jumlah Validasi -->
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg flex items-center space-x-4">
+                    <div class="bg-orange-100 dark:bg-orange-900 p-3 rounded-full"><svg class="w-6 h-6 text-orange-600 dark:text-orange-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.286zm0 13.036h.008v.008h-.008v-.008z" /></svg></div>
+                    <div><p class="text-gray-500 dark:text-gray-400 text-sm">Validasi Data</p><p id="jumlah-validasi" class="text-2xl font-bold">0</p></div>
+                </div>
+                 <!-- Jumlah Payment -->
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg flex items-center space-x-4">
+                    <div class="bg-yellow-100 dark:bg-yellow-900 p-3 rounded-full"><svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 21z" /></svg></div>
+                    <div><p class="text-gray-500 dark:text-gray-400 text-sm">Payment</p><p id="jumlah-payment" class="text-2xl font-bold">0</p></div>
+                </div>
+                <!-- Jumlah Instalasi -->
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg flex items-center space-x-4">
+                    <div class="bg-purple-100 dark:bg-purple-900 p-3 rounded-full"><svg class="w-6 h-6 text-purple-600 dark:text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.438.995s.145.755.438.995l1.003.827c.424.35.534.954.26 1.431l-1.296 2.247a1.125 1.125 0 01-1.37.49l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.063-.374-.313-.686-.645-.87a6.52 6.52 0 01-.22-.127c-.324-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.37-.49l-1.296-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.437-.995s-.145-.755-.437-.995l-1.004-.827a1.125 1.125 0 01-.26-1.431l1.296-2.247a1.125 1.125 0 011.37-.49l1.217.456c.355.133.75.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></div>
+                    <div><p class="text-gray-500 dark:text-gray-400 text-sm">Instalasi</p><p id="jumlah-instalasi" class="text-2xl font-bold">0</p></div>
+                </div>
+                 <!-- Jumlah Aktif -->
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg flex items-center space-x-4">
+                    <div class="bg-green-100 dark:bg-green-900 p-3 rounded-full"><svg class="w-6 h-6 text-green-600 dark:text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.542L16.5 21.75l-.398-1.208a3.375 3.375 0 00-2.456-2.456L12.75 18l1.208-.398a3.375 3.375 0 002.456-2.456L16.5 14.25l.398 1.208a3.375 3.375 0 002.456 2.456L20.25 18l-1.208.398a3.375 3.375 0 00-2.456 2.456z" /></svg></div>
+                    <div><p class="text-gray-500 dark:text-gray-400 text-sm">Aktif</p><p id="jumlah-aktif" class="text-2xl font-bold">0</p></div>
+                </div>
+                 <!-- Jumlah Batal -->
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-lg flex items-center space-x-4">
+                    <div class="bg-red-100 dark:bg-red-900 p-3 rounded-full"><svg class="w-6 h-6 text-red-600 dark:text-red-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg></div>
+                    <div><p class="text-gray-500 dark:text-gray-400 text-sm">Batal</p><p id="jumlah-batal" class="text-2xl font-bold">0</p></div>
+                </div>
+            </section>
+            
+            <section class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg">
+                 <h2 class="text-2xl font-semibold mb-4">Pendaftaran per Hari (7 Hari Terakhir)</h2>
+                 <div class="h-72"><canvas id="registrationChart"></canvas></div>
+            </section>
+
+            <section class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg">
+                <div class="flex flex-col md:flex-row justify-between items-start mb-4 gap-4">
+                    <h2 class="text-2xl font-semibold md:mb-0 mb-3">Data Lengkap Responden</h2>
+                    <div class="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
+                        <!-- Filters -->
+                        <select id="status-filter" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <option value="">Semua Status</option>
+                            <option value="Lead">Lead</option>
+                            <option value="Validasi Data">Validasi Data</option>
+                            <option value="Payment">Payment</option>
+                            <option value="Instalasi">Instalasi</option>
+                            <option value="Aktif">Aktif</option>
+                            <option value="Batal">Batal</option>
+                        </select>
+                        <select id="date-filter" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <option value="all">Semua Tanggal</option>
+                            <option value="7d">7 Hari Terakhir</option>
+                            <option value="30d">Bulan Ini</option>
+                        </select>
+                        <input type="text" id="search-input" placeholder="Cari..." class="w-full md:w-52 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        <button id="export-csv" class="px-4 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 flex items-center justify-center gap-2">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                             <span>Ekspor</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-sky-600 text-white dark:bg-sky-800 dark:text-sky-100 uppercase">
+                            <tr>
+                                <th class="p-4 sortable" data-column="Timestamp">Timestamp <span class="sort-icon"></span></th>
+                                <th class="p-4 sortable" data-column="Nama Lengkap">Nama Lengkap <span class="sort-icon"></span></th>
+                                <th class="p-4">No. WhatsApp</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-table-body" class="divide-y divide-gray-200 dark:divide-gray-700"></tbody>
+                    </table>
+                     <p id="no-data-message" class="text-center py-8 text-gray-500 hidden">Tidak ada data yang cocok.</p>
+                </div>
+                <!-- Pagination Controls -->
+                <div id="pagination-controls" class="flex justify-between items-center mt-6"></div>
+            </section>
+        </div>
+    </div>
+    
+    <!-- Modal for viewing respondent details -->
+    <div id="modal" class="relative z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div id="modal-backdrop" class="fixed inset-0 bg-gray-500 bg-opacity-75"></div>
+        <div class="fixed inset-0 z-10 overflow-y-auto">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div id="modal-panel" class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 text-left shadow-xl w-full max-w-lg">
+                    <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-sky-100 dark:bg-sky-900 sm:mx-0 sm:h-10 sm:w-10">
+                                <svg class="h-6 w-6 text-sky-600 dark:text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                            </div>
+                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                <h3 class="text-lg font-semibold leading-6 text-gray-900 dark:text-white" id="modal-title">Detail Responden</h3>
+                                <div id="modal-body" class="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 rounded-b-2xl">
+                        <button type="button" id="modal-close-btn" class="mt-3 inline-flex w-full justify-center rounded-md bg-white dark:bg-gray-600 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-500 hover:bg-gray-50 dark:hover:bg-gray-500 sm:mt-0 sm:w-auto">Tutup</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- CONFIG ---
+        const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS72Zyrvce2GBzZ3ttAotAieYlNvdMhIS4Yn6QDshilN8ad8XMXbMNO8TDuut3vAKeTzv-8ybIhlFOh/pub?gid=0&single=true&output=csv';
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwZcaFn6eMTOMX4omv32ziy55rShBdgpXDj7zx-Xxmcp7RTTlWG2X4OyBdz0RBhoWfw/exec'; 
+        const ROWS_PER_PAGE = 9;
+        const STATUS_OPTIONS = ["Lead", "Validasi Data", "Payment", "Instalasi", "Aktif", "Batal"];
+
+        // --- DOM Elements ---
+        const loader = document.getElementById('loader');
+        const dashboardContent = document.getElementById('dashboard-content');
+        const totalRespondenEl = document.getElementById('total-responden');
+        const dataTableBody = document.getElementById('data-table-body');
+        const searchInput = document.getElementById('search-input');
+        const statusFilter = document.getElementById('status-filter');
+        const dateFilter = document.getElementById('date-filter');
+        const noDataMessage = document.getElementById('no-data-message');
+        const paginationControls = document.getElementById('pagination-controls');
+        const exportCsvBtn = document.getElementById('export-csv');
+        const modal = document.getElementById('modal');
+        const modalBackdrop = document.getElementById('modal-backdrop');
+        const modalPanel = document.getElementById('modal-panel');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+        const modalBody = document.getElementById('modal-body');
+        // New Stat Cards
+        const pendaftarHariIniEl = document.getElementById('pendaftar-hari-ini');
+        const jumlahLeadEl = document.getElementById('jumlah-lead');
+        const jumlahValidasiEl = document.getElementById('jumlah-validasi');
+        const jumlahPaymentEl = document.getElementById('jumlah-payment');
+        const jumlahInstalasiEl = document.getElementById('jumlah-instalasi');
+        const jumlahAktifEl = document.getElementById('jumlah-aktif');
+        const jumlahBatalEl = document.getElementById('jumlah-batal');
+
+        // --- State Management ---
+        let allData = [];
+        let filteredData = [];
+        let registrationChart = null;
+        let currentPage = 1;
+        let sortColumn = 'Timestamp';
+        let sortDirection = 'desc';
+
+        // --- Main Function to Fetch Data ---
+        function fetchData() {
+            Papa.parse(SHEET_URL, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                cache: false,
+                complete: (results) => {
+                    allData = results.data.map(row => ({...row, status: row.Status || 'Lead'}));
+                    loader.style.display = 'none';
+                    dashboardContent.classList.remove('hidden');
+                    applyFiltersAndRender();
+                    updateStatistics();
+                    createChart();
+                },
+                error: (err) => {
+                    console.error("Error fetching data: ", err);
+                    loader.innerHTML = '<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg" role="alert"><p class="font-bold">Gagal Memuat Data</p><p>Periksa kembali URL atau pengaturan publikasi Google Sheet Anda.</p></div>';
+                }
+            });
+        }
+        
+        // --- Rendering Logic ---
+        function applyFiltersAndRender() {
+            let data = [...allData];
+            const selectedStatus = statusFilter.value;
+            if (selectedStatus) {
+                data = data.filter(row => row.status === selectedStatus);
+            }
+            const selectedDateRange = dateFilter.value;
+            if (selectedDateRange !== 'all') {
+                const now = new Date();
+                let startDate;
+                if (selectedDateRange === '7d') {
+                    startDate = new Date(new Date().setDate(now.getDate() - 7));
+                } else if (selectedDateRange === '30d') {
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                }
+                data = data.filter(row => {
+                    const rowDate = parseGoogleSheetDate(row.Timestamp);
+                    return rowDate && rowDate >= startDate;
+                });
+            }
+            const searchTerm = searchInput.value.toLowerCase();
+            if (searchTerm) {
+                data = data.filter(row => Object.values(row).some(value => value && value.toString().toLowerCase().includes(searchTerm)));
+            }
+            filteredData = data;
+            currentPage = 1;
+            sortData();
+            displayData();
+            renderPagination();
+            updateSortIcons();
+        }
+
+        function displayData() {
+            dataTableBody.innerHTML = '';
+            noDataMessage.classList.toggle('hidden', filteredData.length > 0);
+            const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
+            const endIndex = startIndex + ROWS_PER_PAGE;
+            const pageData = filteredData.slice(startIndex, endIndex);
+
+            pageData.forEach((row) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors';
+                const originalIndex = allData.findIndex(item => item.Timestamp === row.Timestamp && item['Nama Lengkap'] === row['Nama Lengkap']);
+                const statusOptionsHTML = STATUS_OPTIONS.map(opt => `<option value="${opt}" ${row.status === opt ? 'selected' : ''}>${opt}</option>`).join('');
+                const statusColorClass = getStatusColorClass(row.status);
+
+                tr.innerHTML = `
+                    <td class="p-4 whitespace-nowrap">${sanitize(row['Timestamp'] || 'N/A')}</td>
+                    <td class="p-4 font-medium text-gray-900 dark:text-white">${sanitize(row['Nama Lengkap'] || 'N/A')}</td>
+                    <td class="p-4">${sanitize(row['No. WhatsApp'] || 'N/A')}</td>
+                    <td class="p-4">
+                        <select class="status-select ${statusColorClass}" data-index="${originalIndex}">
+                            ${statusOptionsHTML}
+                        </select>
+                    </td>
+                    <td class="p-4 whitespace-nowrap">
+                        <button class="view-details-btn text-sky-600 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-200 mr-3" data-index="${originalIndex}" title="Lihat Detail">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.022 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
+                        </button>
+                        <button class="copy-data-btn text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200" data-index="${originalIndex}" title="Salin Data Responden">
+                           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7 9a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2H9a2 2 0 01-2-2V9z" /><path d="M5 3a2 2 0 00-2 2v6a2 2 0 002 2V5h6a2 2 0 00-2-2H5z" /></svg>
+                        </button>
+                    </td>
+                `;
+                dataTableBody.appendChild(tr);
+            });
+            document.querySelectorAll('.view-details-btn').forEach(btn => btn.addEventListener('click', showModal));
+            document.querySelectorAll('.copy-data-btn').forEach(btn => btn.addEventListener('click', copyRowData));
+            document.querySelectorAll('.status-select').forEach(sel => sel.addEventListener('change', handleStatusChange));
+        }
+        
+        async function handleStatusChange(event) {
+            const selectElement = event.currentTarget;
+            const newStatus = selectElement.value;
+            const index = parseInt(selectElement.dataset.index, 9);
+            
+            if (isNaN(index) || !allData[index]) { return; }
+            
+            selectElement.className = 'status-select';
+            selectElement.classList.add(getStatusColorClass(newStatus));
+
+            const oldStatus = allData[index].status;
+            selectElement.disabled = true;
+
+            try {
+                await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rowIndex: index, newStatus: newStatus })
+                });
+                allData[index].status = newStatus;
+                updateStatistics(); // Update stats after status change
+                if (statusFilter.value !== "") {
+                    applyFiltersAndRender();
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+                alert('Gagal mengupdate status. Silakan coba lagi.');
+                allData[index].status = oldStatus;
+                selectElement.value = oldStatus;
+                selectElement.className = 'status-select';
+                selectElement.classList.add(getStatusColorClass(oldStatus));
+            } finally {
+                selectElement.disabled = false;
+            }
+        }
+        
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredData.length / ROWS_PER_PAGE);
+            paginationControls.innerHTML = '';
+            if (totalPages <= 1) return;
+            let html = `<span class="text-sm text-gray-700 dark:text-gray-400">Menampilkan <b>${filteredData.length > 0 ? (currentPage - 1) * ROWS_PER_PAGE + 1 : 0}</b>-<b>${Math.min(currentPage * ROWS_PER_PAGE, filteredData.length)}</b> dari <b>${filteredData.length}</b></span>`;
+            html += '<div class="flex items-center gap-2">';
+            html += `<button id="prev-page" class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed" ${currentPage === 1 ? 'disabled' : ''}>Sebelumnya</button>`;
+            html += `<button id="next-page" class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed" ${currentPage === totalPages ? 'disabled' : ''}>Berikutnya</button>`;
+            html += '</div>';
+            paginationControls.innerHTML = html;
+            document.getElementById('prev-page')?.addEventListener('click', () => { if (currentPage > 1) { currentPage--; displayData(); renderPagination(); } });
+            document.getElementById('next-page')?.addEventListener('click', () => { if (currentPage < totalPages) { currentPage++; displayData(); renderPagination(); } });
+        }
+        
+        function sortData() {
+            filteredData.sort((a, b) => {
+                let valA = a[sortColumn] || '';
+                let valB = b[sortColumn] || '';
+                if (sortColumn === 'Timestamp') {
+                    valA = parseGoogleSheetDate(valA);
+                    valB = parseGoogleSheetDate(valB);
+                } else if (typeof valA === 'string') {
+                    valA = valA.toLowerCase();
+                    valB = valB.toLowerCase();
+                }
+                if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+                if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        function updateStatistics() {
+            if (!allData.length) return;
+
+            totalRespondenEl.textContent = allData.length;
+
+            const today = new Date();
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            const pendaftarHariIni = allData.filter(row => {
+                const rowDateStr = parseGoogleSheetDate(row.Timestamp, true);
+                return rowDateStr === todayStr;
+            }).length;
+            pendaftarHariIniEl.textContent = pendaftarHariIni;
+
+            const statusCounts = allData.reduce((acc, row) => {
+                const status = row.status || 'Lead';
+                acc[status] = (acc[status] || 0) + 1;
+                return acc;
+            }, {});
+
+            jumlahLeadEl.textContent = statusCounts['Lead'] || 0;
+            jumlahValidasiEl.textContent = statusCounts['Validasi Data'] || 0;
+            jumlahPaymentEl.textContent = statusCounts['Payment'] || 0;
+            jumlahInstalasiEl.textContent = statusCounts['Instalasi'] || 0;
+            jumlahAktifEl.textContent = statusCounts['Aktif'] || 0;
+            jumlahBatalEl.textContent = statusCounts['Batal'] || 0;
+        }
+        
+        function createChart() {
+            const ctx = document.getElementById('registrationChart').getContext('2d');
+            const registrations = {};
+            allData.forEach(row => {
+                if (row.Timestamp) {
+                    const dateKey = parseGoogleSheetDate(row.Timestamp, true);
+                    if (dateKey) {
+                         registrations[dateKey] = (registrations[dateKey] || 0) + 1;
+                    }
+                }
+            });
+            const sortedDates = Object.keys(registrations).sort();
+            const labels = sortedDates.slice(-7).map(date => {
+                const [year, month, day] = date.split('-');
+                return new Date(year, month - 1, day).toLocaleDateString('id-ID', {day:'numeric', month:'short'});
+            });
+            const chartData = sortedDates.slice(-7).map(date => registrations[date]);
+            if (registrationChart) registrationChart.destroy();
+            registrationChart = new Chart(ctx, {
+                type: 'line', data: { labels: labels, datasets: [{ label: 'Jumlah Pendaftaran', data: chartData, borderColor: '#0284c7', backgroundColor: 'rgba(2, 132, 199, 0.1)', fill: true, tension: 0.4 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+            });
+        }
+        
+        function updateSortIcons() {
+            document.querySelectorAll('.sortable .sort-icon').forEach(icon => icon.textContent = '');
+            const activeIcon = document.querySelector(`.sortable[data-column="${sortColumn}"] .sort-icon`);
+            if (activeIcon) {
+                activeIcon.textContent = sortDirection === 'asc' ? '▲' : '▼';
+                activeIcon.style.opacity = '1';
+            }
+        }
+
+        function showModal(event) {
+            const index = event.currentTarget.dataset.index;
+            const data = allData[index];
+            if (!data) return;
+            modalBody.innerHTML = `
+                <p><strong>Timestamp:</strong> ${sanitize(data['Timestamp'] || 'N/A')}</p>
+                <p><strong>Nama Lengkap:</strong> ${sanitize(data['Nama Lengkap'] || 'N/A')}</p>
+                <p><strong>NIK:</strong> ${sanitize(data['NIK'] || 'N/A')}</p>
+                <p><strong>Tanggal Lahir:</strong> ${sanitize(data['Tanggal Lahir'] || 'N/A')}</p>
+                <p><strong>Email:</strong> ${sanitize(data['Email'] || 'N/A')}</p>
+                <p><strong>No. WhatsApp:</strong> ${sanitize(data['No. WhatsApp'] || 'N/A')}</p>
+                <p><strong>Alamat Lengkap:</strong><br>${sanitize(data['Alamat Lengkap'] || 'N/A').replace(/\n/g, '<br>')}</p>
+                <p><strong>Foto KTP:</strong> ${ data['Link Foto KTP'] ? `<a href="${sanitize(data['Link Foto KTP'])}" target="_blank" rel="noopener noreferrer" class="text-sky-500 hover:underline">Lihat Gambar</a>` : 'N/A' }</p>
+                <p><strong>Status:</strong> ${sanitize(data['status'] || 'N/A')}</p>
+            `;
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+            modalBackdrop.classList.remove('opacity-0');
+            modalBackdrop.classList.add('opacity-100');
+            modalPanel.classList.remove('opacity-0', 'translate-y-4', 'sm:scale-95');
+            modalPanel.classList.add('opacity-100', 'translate-y-0', 'sm:scale-100');
+        }
+
+        function hideModal() {
+            document.body.classList.remove('overflow-hidden');
+            modalBackdrop.classList.remove('opacity-100');
+            modalBackdrop.classList.add('opacity-0');
+            modalPanel.classList.remove('opacity-100', 'translate-y-0', 'sm:scale-100');
+            modalPanel.classList.add('opacity-0', 'translate-y-4', 'sm:scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        function copyRowData(event){
+            const index = event.currentTarget.dataset.index;
+            const data = allData[index];
+            if(!data) return;
+            const textToCopy = `Nama Lengkap: ${data['Nama Lengkap'] || ''}\nNIK: ${data['NIK'] || ''}\nStatus: ${data['status'] || ''}\nNo. WhatsApp: ${data['No. WhatsApp'] || ''}\nEmail: ${data['Email'] || ''}\nAlamat Lengkap: ${data['Alamat Lengkap'] || ''}`.trim();
+            const textArea = document.createElement("textarea");
+            textArea.value = textToCopy;
+            textArea.style.position = "fixed";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try { document.execCommand('copy'); alert(`Data responden "${data['Nama Lengkap']}" telah disalin!`); } 
+            catch (err) { console.error('Gagal menyalin data: ', err); alert('Gagal menyalin data.'); }
+            document.body.removeChild(textArea);
+        }
+
+        function exportToCSV() {
+            if (!filteredData.length) { alert("Tidak ada data untuk diekspor."); return; }
+            let csvContent = "data:text/csv;charset=utf-8," + Object.keys(filteredData[0]).join(",") + "\n" + filteredData.map(e => Object.values(e).map(val => `"${String(val || '').replace(/"/g, '""')}"`).join(",")).join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "export_responden.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function getStatusColorClass(status) {
+            const sanitizedStatus = String(status).replace(/\s+/g, '-');
+            return `status-${sanitizedStatus}`;
+        }
+
+        function parseGoogleSheetDate(timestamp, dateOnly = false) {
+            if (!timestamp) return null;
+            const parts = timestamp.split(' ');
+            if (parts.length < 1) return null;
+            const dateParts = parts[0].split('/');
+            if (dateParts.length !== 3) return null;
+            const [day, month, year] = dateParts;
+            if (dateOnly) return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            const timePart = parts[1] || '00:00:00';
+            const isoString = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${timePart}`;
+            return new Date(isoString).getTime();
+        }
+        function sanitize(str) {
+            if (str === null || str === undefined) return '';
+            const temp = document.createElement('div');
+            temp.textContent = str;
+            return temp.innerHTML;
+        };
+
+        searchInput.addEventListener('input', applyFiltersAndRender);
+        statusFilter.addEventListener('change', applyFiltersAndRender);
+        dateFilter.addEventListener('change', applyFiltersAndRender);
+        exportCsvBtn.addEventListener('click', exportToCSV);
+        modalCloseBtn.addEventListener('click', hideModal);
+        modalBackdrop.addEventListener('click', hideModal);
+        document.querySelectorAll('.sortable').forEach(header => {
+            header.addEventListener('click', () => {
+                const column = header.dataset.column;
+                if (sortColumn === column) { sortDirection = sortDirection === 'asc' ? 'desc' : 'asc'; } 
+                else { sortColumn = column; sortDirection = 'desc'; }
+                applyFiltersAndRender();
+            });
+        });
+
+        fetchData();
+    });
+    </script>
+</body>
+</html>
