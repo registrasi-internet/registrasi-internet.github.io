@@ -497,12 +497,12 @@
                     payload.ktpImageFileName = `KTP-${(payload.nama || 'user').replace(/\s/g, '-')}-${recordId}.jpg`;
                     
 
-                    elements.submitBtn.innerHTML = `<div class="spinner"></div><span>Menyimpan ke Google Drive...</span>`;
+                    elements.submitBtn.innerHTML = `<div class="spinner"></div><span>Menyimpan Data...</span>`;
                     
                     const sheetResult = await submitToGoogleSheet(payload);
 
                     if (sheetResult.success) {
-                        showNotification(`Registrasi berhasil! Berkas tersimpan di Google Drive.`);
+                        showNotification(`Terima Kasih, Registrasi berhasil!`);
                     } else {
                         showNotification(`GAGAL menyimpan data. ${sheetResult.message || 'Silakan coba lagi.'}`, true);
                     }
