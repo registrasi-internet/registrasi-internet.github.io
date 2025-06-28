@@ -30,7 +30,7 @@
         
         <div id="app-content" class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 space-y-6">
             <header class="text-center">
-                <h1 class="text-3xl font-bold text-[#1390d0] dark:text-sky-400">Registrasi Mudah! 1.3</h1>
+                <h1 class="text-3xl font-bold text-[#1390d0] dark:text-sky-400">Registrasi Mudah! 1.15</h1>
                 <p class="text-gray-500 dark:text-gray-400 mt-2">Wi-Fi Internet Cepat</p>
             </header>
 
@@ -70,22 +70,38 @@
                     <input type="email" id="email" name="email" required class="mt-1 block w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1390d0] text-gray-900 dark:text-white" placeholder="nama@email.com">
                 </div>
                 <div>
-                    <label for="alamat" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Alamat Pemasangan</label>
+                    <label for="alamat" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Alamat Lengkap Pemasangan</label>
                     <textarea id="alamat" name="alamat" rows="3" required class="mt-1 block w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1390d0] text-gray-900 dark:text-white" placeholder="Masukkan alamat lengkap Anda"></textarea>
+                </div>
+                <div>
+                    <label for="paket-layanan" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Paket Layanan</label>
+                    <select id="paket-layanan" name="paket-layanan" required class="mt-1 block w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1390d0] text-gray-900 dark:text-white">
+                        <option>Internet 50 Mbps</option>
+                        <option>Internet 100 Mbps</option>
+                        <option>Internet 150 Mbps</option>
+                        <option>Internet Gamers 200 Mbps</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="catatan" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Catatan (Opsional)</label>
+                    <textarea id="catatan" name="catatan" rows="2" class="mt-1 block w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1390d0] text-gray-900 dark:text-white" placeholder="Informasi tambahan, misal: Patokan rumah, dll."></textarea>
                 </div>
                 <div>
                     <button type="submit" id="submit-btn" disabled class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#1390d0] hover:bg-[#1075b0] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors">
                         <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                         </svg>
-                        Buat dan Unduh PDF
+                        Simpan dan Selesaikan
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Modal for Cropping -->
     <div id="crop-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-40 p-4"><div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-xl w-full"><h3 class="text-xl font-bold text-center text-gray-800 dark:text-white mb-4">Sesuaikan Frame KTP</h3><div class="img-container w-full h-64 md:h-80 mb-4"><img id="image-to-crop" src=""></div><div class="flex justify-between space-x-4"><button id="cancel-crop-btn" class="w-full bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-white py-2 rounded-lg hover:bg-gray-400 transition-colors">Batal</button><button id="crop-btn" class="w-full bg-[#1390d0] text-white py-2 rounded-lg hover:bg-[#1075b0] transition-colors">Potong & Gunakan</button></div></div></div>
+    
+    <!-- Modal for Notifications -->
     <div id="notification-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4"><div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-sm mx-auto text-center"><p id="notification-message" class="text-lg text-gray-800 dark:text-white"></p><div id="modal-buttons" class="mt-4 flex flex-col sm:flex-row-reverse gap-3">
         <button id="close-modal-btn" class="w-full bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors">Tutup</button>
     </div></div></div>
@@ -94,20 +110,15 @@
         document.addEventListener('DOMContentLoaded', main);
 
         function main() {
-            // --- KONFIGURASI PENTING ---
-            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyg5EZkuXB1nqUztxgIBzxmnXv4NSWZvtR9_puHysD_ooI1cnvUlM3DKAxcb3D29XfCcQ/exec";
-            const GEMINI_API_KEY = "AIzaSyDNbUhmTtdpftZq15MctBuicsGryUuq2d0";
-            // --------------------------
-
-            if (typeof Cropper === 'undefined' || typeof window.jspdf === 'undefined' || typeof qrcode === 'undefined') {
-                document.getElementById('critical-error-banner').textContent = `Pustaka penting gagal dimuat. Harap periksa koneksi dan muat ulang.`;
-                document.getElementById('critical-error-banner').style.display = 'block';
-                return;
-            }
-
-            let cropper, ktpImageBase64 = null;
-            const BLUR_THRESHOLD = 100;
+            // --- KONFIGURASI ---
+            // URL Telah Diperbarui
+            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzzGXkYF_R2ajMlh9KZBvhg2vG1kFugpHCx2ouOPOn4wZqvr9ukaBrvo5FpTe5nUmDl-A/exec";
+            const GEMINI_API_KEY = "AIzaSyDNbUhmTtdpftZq15MctBuicsGryUuq2d0"; 
             
+            // --- KONSTANTA ---
+            const BLUR_THRESHOLD = 100;
+
+            // --- Elemen DOM ---
             const elements = {
                 ktpUpload: document.getElementById('ktp-upload'),
                 nama: document.getElementById('nama'),
@@ -126,17 +137,31 @@
                 cancelCropBtn: document.getElementById('cancel-crop-btn'),
                 notificationModal: document.getElementById('notification-modal'),
                 notificationMessage: document.getElementById('notification-message'),
-                closeModalBtn: document.getElementById('close-modal-btn'),
+                modalButtons: document.getElementById('modal-buttons'),
             };
+
+            let cropper, ktpImageBase64 = null;
+
+            // --- Cek Pustaka ---
+            if (typeof Cropper === 'undefined' || typeof window.jspdf === 'undefined' || typeof qrcode === 'undefined') {
+                document.getElementById('critical-error-banner').textContent = `Pustaka penting gagal dimuat. Harap periksa koneksi dan muat ulang.`;
+                document.getElementById('critical-error-banner').style.display = 'block';
+                return;
+            }
+
+            // --- FUNGSI-FUNGSI ---
 
             const showCropper = (imageUrl) => {
                 elements.imageToCrop.src = imageUrl;
                 elements.cropModal.classList.remove('hidden');
                 if (cropper) cropper.destroy();
-                cropper = new Cropper(elements.imageToCrop, { aspectRatio: 85.6 / 54, viewMode: 2, dragMode: 'move', background: false, autoCropArea: 0.9 });
+                cropper = new Cropper(elements.imageToCrop, { 
+                    aspectRatio: 85.6 / 54, viewMode: 2, dragMode: 'move', 
+                    background: false, autoCropArea: 0.9 
+                });
             };
     
-            const resetImageInput = () => {
+            const resetApp = () => {
                 elements.dataForm.reset();
                 elements.ktpUpload.value = '';
                 if(cropper) cropper.destroy();
@@ -145,129 +170,146 @@
                 elements.uploadBox.classList.remove('hidden');
                 elements.imageStatus.textContent = '';
                 elements.submitBtn.disabled = true;
+                const originalButtonHTML = `<svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg> Simpan dan Selesaikan`;
+                elements.submitBtn.innerHTML = originalButtonHTML;
                 ktpImageBase64 = null;
                 elements.ocrResults.classList.add('hidden');
-                ['nama', 'nik', 'tglLahir', 'whatsapp', 'email', 'alamat'].forEach(id => document.getElementById(id).value = '');
+                ['nama', 'nik', 'tglLahir', 'whatsapp', 'email', 'alamat', 'paket-layanan', 'catatan'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) el.value = '';
+                });
             };
 
             const calculateBlurScore = (imageDataUrl) => {
-                return new Promise((resolve, reject) => { const i = new Image(); i.src = imageDataUrl; i.onload = () => { const c = document.createElement('canvas'), x = c.getContext('2d', { willReadFrequently: true }); c.width = i.width; c.height = i.height; x.drawImage(i, 0, 0); const d = x.getImageData(0, 0, c.width, c.height); const g = []; for (let j = 0; j < d.data.length; j += 4) g.push(d.data[j] * 0.299 + d.data[j + 1] * 0.587 + d.data[j + 2] * 0.114); const l = [0, 1, 0, 1, -4, 1, 0, 1, 0]; let s = 0, q = 0, v = []; for (let y = 1; y < c.height - 1; y++) for (let z = 1; z < c.width - 1; z++) { let a = 0, k = 0; for (let ky = -1; ky <= 1; ky++) for (let kx = -1; kx <= 1; kx++) a += g[(y + ky) * c.width + (z + kx)] * l[k++]; v.push(a); s += a; q += a * a; } const m = s / v.length; resolve(q / v.length - m * m); }; i.onerror = reject; });
+                return new Promise((resolve, reject) => { 
+                    const i = new Image(); 
+                    i.src = imageDataUrl; 
+                    i.onload = () => { 
+                        const c = document.createElement('canvas'), x = c.getContext('2d', { willReadFrequently: true }); 
+                        c.width = i.width; c.height = i.height; 
+                        x.drawImage(i, 0, 0); 
+                        const d = x.getImageData(0, 0, c.width, c.height); 
+                        const g = []; 
+                        for (let j = 0; j < d.data.length; j += 4) g.push(d.data[j] * 0.299 + d.data[j + 1] * 0.587 + d.data[j + 2] * 0.114);
+                        const l = [0, 1, 0, 1, -4, 1, 0, 1, 0]; 
+                        let s = 0, q = 0; const v = []; 
+                        for (let y = 1; y < c.height - 1; y++) for (let z = 1; z < c.width - 1; z++) { 
+                            let a = 0, k = 0; 
+                            for (let ky = -1; ky <= 1; ky++) for (let kx = -1; kx <= 1; kx++) a += g[(y + ky) * c.width + (z + kx)] * l[k++];
+                            v.push(a); s += a; q += a * a; 
+                        }
+                        const m = s / v.length; 
+                        resolve(q / v.length - m * m); 
+                    }; 
+                    i.onerror = reject; 
+                });
             };
             
             const extractKtpData = async (base64ImageData) => {
-                // Perbaikan: Hapus pengecekan kunci API placeholder yang salah.
-                // Sekarang akan mencoba menggunakan kunci API selama tidak kosong atau placeholder default.
                 if (!GEMINI_API_KEY || GEMINI_API_KEY === "GANTI_DENGAN_API_KEY_ANDA") {
-                    elements.imageStatus.innerHTML = `<span class="text-yellow-500">Fitur OCR non-aktif: Kunci API belum diatur.</span>`;
+                    elements.imageStatus.innerHTML = `<span class="text-yellow-500">Fitur OCR non-aktif. Silakan isi data manual.</span>`;
                     elements.ocrResults.classList.remove('hidden');
-                    elements.nama.value = 'Mode Manual';
-                    elements.nik.value = 'Mode Manual';
-                    elements.tglLahir.value = 'Mode Manual';
+                    ['nama', 'nik', 'tglLahir'].forEach(id => {
+                       const el = document.getElementById(id);
+                       el.readOnly = false;
+                       el.placeholder = `Masukkan ${id}`;
+                       el.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'text-gray-500', 'dark:text-gray-400');
+                       el.classList.add('bg-gray-50', 'dark:bg-gray-700', 'text-gray-900', 'dark:text-white');
+                    });
                     elements.submitBtn.disabled = false;
                     return;
                 }
 
                 elements.imageStatus.innerHTML = `<div class="spinner"></div><span>Mengekstrak data dari KTP...</span>`;
                 const prompt = `From the provided image of an Indonesian KTP (identity card), extract the following information and return it as a valid JSON object. 1. "nama": The full name. 2. "nik": The 16-digit NIK. 3. "tglLahir": The date of birth, formatted as DD-MM-YYYY. If a field is not found, return null for that specific field.`;
-                const payload = { contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: base64ImageData.split(',')[1] } }] }], generationConfig: { responseMimeType: "application/json" } };
+                const payload = {
+                    contents: [{ parts: [ { text: prompt }, { inlineData: { mimeType: "image/jpeg", data: base64ImageData.split(',')[1] }}] }],
+                    generationConfig: { responseMimeType: "application/json" }
+                };
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
                 
                 try {
                     const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                     if (!response.ok) {
                         const errorData = await response.json();
-                        throw new Error(`API request failed with status ${response.status}: ${errorData.error.message}`);
+                        throw new Error(`API request failed: ${errorData?.error?.message || 'Unknown API error.'}`);
                     }
                     const result = await response.json();
+                    if (!result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                        throw new Error('Invalid response structure from API.');
+                    }
                     const textContent = result.candidates[0].content.parts[0].text;
                     const ocrData = JSON.parse(textContent);
                     elements.nama.value = ocrData.nama || 'Tidak terdeteksi';
                     elements.nik.value = ocrData.nik || 'Tidak terdeteksi';
                     elements.tglLahir.value = ocrData.tglLahir || 'Tidak terdeteksi';
+                    elements.ocrResults.classList.remove('hidden');
                     elements.imageStatus.innerHTML = `<span class="text-green-500">✓ Ekstraksi data berhasil.</span>`;
                     elements.submitBtn.disabled = false;
                 } catch (error) {
                     console.error("OCR Extraction Error:", error);
-                    elements.nama.value = 'Gagal mengekstrak';
-                    elements.nik.value = 'Gagal mengekstrak';
-                    elements.tglLahir.value = 'Gagal mengekstrak';
-                    elements.imageStatus.innerHTML = `<span class="text-red-500">Gagal mengekstrak data. Periksa Kunci API.</span>`;
-                    elements.submitBtn.disabled = false; // Aktifkan tombol agar bisa coba lagi atau manual
+                    ['nama', 'nik', 'tglLahir'].forEach(id => {
+                       const el = document.getElementById(id);
+                       el.value = '';
+                       el.readOnly = false;
+                       el.placeholder = `Gagal, isi manual`;
+                       el.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'text-gray-500', 'dark:text-gray-400');
+                       el.classList.add('bg-gray-50', 'dark:bg-gray-700', 'text-gray-900', 'dark:text-white');
+                    });
+                    elements.ocrResults.classList.remove('hidden');
+                    elements.imageStatus.innerHTML = `<span class="text-red-500">Gagal ekstrak data. Silakan isi manual.</span>`;
+                    elements.submitBtn.disabled = false;
                 }
             };
-
-            const generateAndDownloadPDF = (data, recordId) => {
+            
+            const generatePdfAsBase64 = (data, recordId) => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('p', 'mm', 'a4');
-                const pageW = doc.internal.pageSize.getWidth();
-                const pageH = doc.internal.pageSize.getHeight();
-                const margin = 15;
+                const pageW = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight(), margin = 15;
                 let yPos;
 
-                const primaryColor = '#1390d0';
-                const secondaryColor = '#e7f5fe';
-                const textColor = '#374151';
-                const grayColor = '#6b7280';
-                const whiteColor = '#ffffff';
+                const primaryColor = '#1390d0', secondaryColor = '#e7f5fe', textColor = '#374151', grayColor = '#6b7280', whiteColor = '#ffffff';
 
                 doc.setFillColor(primaryColor);
-                doc.rect(0, 0, pageW, 35, 'F'); 
-
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(18);
-                doc.setTextColor(whiteColor);
+                doc.rect(0, 0, pageW, 35, 'F');
+                doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(whiteColor);
                 doc.text('Bukti Pendaftaran', pageW - margin, 18, { align: 'right' });
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(15);
+                doc.setFont('helvetica', 'normal'); doc.setFontSize(15);
                 doc.text('Wi-Fi Internet', pageW - margin, 25, { align: 'right' });
 
                 yPos = 45;
-                doc.setFontSize(10);
-                doc.setTextColor(grayColor);
+                doc.setFontSize(10); doc.setTextColor(grayColor);
                 doc.text('ID Registrasi:', margin, yPos);
-                doc.setTextColor(textColor);
-                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(textColor); doc.setFont('helvetica', 'bold');
                 doc.text(recordId, margin + 30, yPos);
-
-                doc.setTextColor(grayColor);
-                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(grayColor); doc.setFont('helvetica', 'normal');
                 doc.text('Tanggal Terbit:', pageW - margin - 45, yPos);
-                doc.setTextColor(textColor);
-                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(textColor); doc.setFont('helvetica', 'bold');
                 doc.text(new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }), pageW - margin, yPos, { align: 'right' });
 
                 yPos += 10;
-                doc.setLineWidth(0.5);
-                doc.setDrawColor(primaryColor);
+                doc.setLineWidth(0.5); doc.setDrawColor(primaryColor);
                 doc.line(margin, yPos, pageW - margin, yPos);
 
                 const addDataRow = (y, label, value) => {
-                    yPos = y;
-                    doc.setFontSize(11);
-                    doc.setTextColor(grayColor);
-                    doc.setFont('helvetica', 'normal');
-                    doc.text(label, margin, yPos + 7);
-
-                    doc.setTextColor(textColor);
-                    doc.setFont('helvetica', 'bold');
-                    const valueText = value || 'Tidak Terisi';
-                    const valueLines = doc.splitTextToSize(valueText, pageW - margin - 70);
-                    doc.text(valueLines, margin + 55, yPos + 7);
-                    
-                    yPos += (valueLines.length * 6) + 6;
-                    doc.setDrawColor(secondaryColor);
-                    doc.line(margin, yPos, pageW - margin, yPos);
-                    return yPos;
+                    if (!value) return y;
+                    doc.setFontSize(11); doc.setTextColor(grayColor); doc.setFont('helvetica', 'normal');
+                    doc.text(label, margin, y + 7);
+                    doc.setTextColor(textColor); doc.setFont('helvetica', 'bold');
+                    const valueLines = doc.splitTextToSize(value, pageW - margin * 2 - 55);
+                    doc.text(valueLines, margin + 55, y + 7);
+                    y += (valueLines.length * 5) + 8;
+                    doc.setLineWidth(0.2); doc.setDrawColor('#e5e7eb');
+                    doc.line(margin, y, pageW - margin, y);
+                    return y;
                 };
 
-                yPos += 10;
+                yPos += 5;
                 doc.setFillColor(secondaryColor);
                 doc.roundedRect(margin, yPos, pageW - (margin * 2), 10, 3, 3, 'F');
-                doc.setFontSize(12);
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(primaryColor);
+                doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(primaryColor);
                 doc.text('DATA PEMOHON', margin + 5, yPos + 7);
-                yPos += 12;
+                yPos += 10;
 
                 yPos = addDataRow(yPos, 'Nama Lengkap', data.nama);
                 yPos = addDataRow(yPos, 'NIK', data.nik);
@@ -275,51 +317,99 @@
                 yPos = addDataRow(yPos, 'Alamat Email', data.email);
                 yPos = addDataRow(yPos, 'No. WhatsApp', data.whatsapp);
                 yPos = addDataRow(yPos, 'Alamat Pemasangan', data.alamat);
-                
+                yPos = addDataRow(yPos, 'Paket Layanan', data.paketLayanan);
+                yPos = addDataRow(yPos, 'Catatan', data.catatan);
+
                 yPos += 10;
                 doc.setFillColor(secondaryColor);
                 doc.roundedRect(margin, yPos, pageW - (margin * 2), 10, 3, 3, 'F');
-                doc.setFontSize(12);
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(primaryColor);
+                doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(primaryColor);
                 doc.text('DOKUMEN & VERIFIKASI', margin + 5, yPos + 7);
                 yPos += 15;
 
-                doc.setFontSize(10);
-                doc.setTextColor(grayColor);
+                doc.setFontSize(10); doc.setTextColor(grayColor);
                 doc.text('Foto KTP Terlampir:', margin, yPos);
                 yPos += 5;
+                // 'ktpImageBase64' di sini masih dalam bentuk data URI lengkap
                 doc.addImage(data.ktpImageBase64, 'JPEG', margin, yPos, 85.6, 54);
-                doc.setDrawColor(grayColor);
-                doc.rect(margin, yPos, 85.6, 54, 'S');
+                doc.setDrawColor(grayColor); doc.rect(margin, yPos, 85.6, 54, 'S');
 
-                const qr = qrcode(0, 'L');
-                qr.addData(recordId);
-                qr.make();
+                const qr = qrcode(0, 'L'); qr.addData(recordId); qr.make();
                 const qrImgData = qr.createDataURL(4);
-                const qrX = pageW - margin - 35;
-                const qrY = yPos + 5;
+                const qrX = pageW - margin - 35, qrY = yPos + 5;
                 doc.addImage(qrImgData, 'PNG', qrX, qrY, 30, 30);
-                doc.setFontSize(8);
-                doc.setTextColor(grayColor);
+                doc.setFontSize(8); doc.setTextColor(grayColor);
                 doc.text('Pindai untuk Verifikasi', qrX + 15, qrY + 35, { align: 'center'});
 
                 yPos = pageH - 20;
-                doc.setDrawColor(primaryColor);
-                doc.line(margin, yPos, pageW - margin, yPos);
+                doc.setDrawColor(primaryColor); doc.line(margin, yPos, pageW - margin, yPos);
                 yPos += 8;
-                doc.setFontSize(9);
-                doc.setTextColor(grayColor);
-                doc.setFont('helvetica', 'italic');
+                doc.setFontSize(9); doc.setTextColor(grayColor); doc.setFont('helvetica', 'italic');
                 doc.text('Dokumen ini diterbitkan secara otomatis oleh sistem dan sah tanpa tanda tangan basah.', pageW/2, yPos, { align: 'center' });
 
-                doc.save(`Bukti-Pendaftaran-${data.nama || 'user'}.pdf`);
+                return doc.output('datauristring');
             };
 
-            const showNotification = (message) => {
+            const showNotification = (message, isError = false) => {
                 elements.notificationMessage.textContent = message;
-                elements.notificationModal.classList.remove('hidden');
+                const modalContent = elements.notificationModal.querySelector('.bg-white');
+                const modal = elements.notificationModal;
+                
+                elements.modalButtons.innerHTML = ''; 
+                
+                const closeButton = document.createElement('button');
+                closeButton.id = 'close-modal-btn';
+                closeButton.className = 'w-full bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors';
+                closeButton.textContent = 'Tutup';
+                closeButton.onclick = () => {
+                    modal.classList.add('hidden');
+                    if (!isError) {
+                        resetApp();
+                    }
+                };
+                elements.modalButtons.appendChild(closeButton);
+
+                modalContent.classList.remove('border-2', 'border-red-500', 'border-green-500');
+                if (isError) {
+                    modalContent.classList.add('border-2', 'border-red-500');
+                } else {
+                     modalContent.classList.add('border-2', 'border-green-500');
+                }
+                modal.classList.remove('hidden');
             };
+
+            const submitToGoogleSheet = async (data) => {
+                if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("MASUKKAN_URL")) {
+                    console.error("Pengiriman data gagal: GOOGLE_SCRIPT_URL belum diatur.");
+                    showNotification("Konfigurasi sisi klien tidak lengkap. URL skrip belum diatur.", true);
+                    return { success: false, message: "URL Skrip belum diatur." };
+                }
+                
+                const sheetData = { ...data };
+                sheetData.timestamp = new Date().toISOString();
+                
+                try {
+                    const response = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        redirect: "follow",
+                        body: JSON.stringify(sheetData),
+                        headers: { "Content-Type": "text/plain;charset=utf-8" }
+                    });
+                    
+                    const result = await response.json();
+                    if (result.status === "success") {
+                         return { success: true, link: result.pdfLink };
+                    } else {
+                        return { success: false, message: result.message || `Server merespons dengan kesalahan.` };
+                    }
+
+                } catch (error) {
+                    console.error("Kesalahan Jaringan saat mengirim ke Google Sheet:", error);
+                    return { success: false, message: `Kesalahan jaringan: ${error.message}` };
+                }
+            };
+            
+            // --- EVENT LISTENERS ---
 
             elements.ktpUpload.addEventListener('change', (e) => {
                 const file = e.target.files[0]; if (!file) return;
@@ -328,19 +418,17 @@
                 reader.readAsDataURL(file);
             });
 
-            elements.cancelCropBtn.addEventListener('click', resetImageInput);
+            elements.cancelCropBtn.addEventListener('click', resetApp);
             
             elements.cropBtn.addEventListener('click', async () => {
                 if (!cropper) return;
                 
-                elements.imageStatus.className = 'text-sm mt-2 text-center text-gray-500 dark:text-gray-400 flex items-center justify-center';
                 elements.imageStatus.innerHTML = `<div class="spinner"></div><span>Menganalisis kualitas gambar...</span>`;
-
                 const highQualityCanvas = cropper.getCroppedCanvas({ width: 800, fillColor: '#fff' });
+                // Simpan KTP base64 lengkap untuk ditampilkan di pratinjau dan PDF
                 ktpImageBase64 = highQualityCanvas.toDataURL('image/jpeg', 0.9);
                 
-                const analysisCanvas = document.createElement('canvas');
-                const analysisCtx = analysisCanvas.getContext('2d');
+                const analysisCanvas = document.createElement('canvas'), analysisCtx = analysisCanvas.getContext('2d');
                 const analysisWidth = 200;
                 analysisCanvas.width = analysisWidth;
                 analysisCanvas.height = highQualityCanvas.height * (analysisWidth / highQualityCanvas.width);
@@ -355,32 +443,28 @@
                 try {
                     const score = await calculateBlurScore(analysisImageDataUrl);
                     if (score >= BLUR_THRESHOLD) {
-                        elements.ocrResults.classList.remove('hidden');
                         await extractKtpData(ktpImageBase64);
                     } else {
                         elements.imageStatus.innerHTML = `<span class="text-red-500">✗ Gambar buram! Harap unggah foto yang lebih jelas.</span>`;
-                        ktpImageBase64 = null;
-                        elements.submitBtn.disabled = true;
+                        ktpImageBase64 = null; elements.submitBtn.disabled = true;
                     }
                 } catch (error) {
                     console.error("Image Analysis Error:", error);
                     elements.imageStatus.innerHTML = `<span class="text-red-500">Gagal menganalisis gambar. Coba lagi.</span>`;
-                    ktpImageBase64 = null;
-                    elements.submitBtn.disabled = true;
+                    ktpImageBase64 = null; elements.submitBtn.disabled = true;
                 }
             });
 
             elements.dataForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
                 if (!ktpImageBase64) {
-                    showNotification('Harap unggah gambar KTP yang valid.');
+                    showNotification('Harap unggah gambar KTP yang valid.', true);
                     return;
                 }
 
                 const originalButtonHTML = elements.submitBtn.innerHTML;
                 elements.submitBtn.disabled = true;
-                elements.submitBtn.innerHTML = `<div class="spinner"></div><span>Membuat PDF...</span>`;
+                elements.submitBtn.innerHTML = `<div class="spinner"></div><span>Mengumpulkan data...</span>`;
 
                 const formData = {
                     nama: elements.nama.value,
@@ -389,39 +473,48 @@
                     whatsapp: document.getElementById('whatsapp').value,
                     email: document.getElementById('email').value,
                     alamat: document.getElementById('alamat').value,
-                    ktpImageBase64: ktpImageBase64
+                    paketLayanan: document.getElementById('paket-layanan').value,
+                    catatan: document.getElementById('catatan').value,
+                    ktpImageBase64: ktpImageBase64 // Data URI lengkap untuk PDF
                 };
                 
-                const recordId = `REG-${formData.nik || Date.now()}`;
+                // --- PERUBAHAN: FORMAT ID REGISTRASI ---
+                // Menggunakan nomor WhatsApp sebagai ID unik.
+                const recordId = `REG-${formData.whatsapp.replace(/\D/g, '')}`;
+                formData.recordId = recordId;
 
                 try {
-                    generateAndDownloadPDF(formData, recordId);
+                    elements.submitBtn.innerHTML = `<div class="spinner"></div><span>Membuat PDF...</span>`;
+                    const pdfBase64 = generatePdfAsBase64(formData, recordId);
+
+                    // Siapkan data untuk dikirim ke Google Script
+                    const payload = { ...formData };
+                    payload.pdfBase64 = pdfBase64.split(',')[1];
+                    payload.pdfFileName = `Bukti-Pendaftaran-${(payload.nama || 'user').replace(/\s/g, '-')}-${recordId}.pdf`;
                     
-                    if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== "GANTI_DENGAN_URL_SCRIPT_ANDA") {
-                        fetch(GOOGLE_SCRIPT_URL, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            body: JSON.stringify(formData)
-                        }).catch(err => console.error("Gagal mengirim data di latar belakang:", err));
+                    // Tambahkan data gambar KTP untuk diunggah
+                    payload.ktpImageBase64 = ktpImageBase64.split(',')[1]; // Hanya data base64
+                    payload.ktpImageFileName = `KTP-${(payload.nama || 'user').replace(/\s/g, '-')}-${recordId}.jpg`;
+                    
+
+                    elements.submitBtn.innerHTML = `<div class="spinner"></div><span>Menyimpan ke Google Drive...</span>`;
+                    
+                    const sheetResult = await submitToGoogleSheet(payload);
+
+                    if (sheetResult.success) {
+                        showNotification(`Registrasi berhasil! Berkas tersimpan di Google Drive.`);
                     } else {
-                        console.log("Pengiriman data dilewati karena GOOGLE_SCRIPT_URL belum diatur.");
+                        showNotification(`GAGAL menyimpan data. ${sheetResult.message || 'Silakan coba lagi.'}`, true);
                     }
+                    elements.submitBtn.innerHTML = originalButtonHTML;
+                    elements.submitBtn.disabled = false;
 
-                    setTimeout(() => {
-                        resetImageInput();
-                        elements.submitBtn.innerHTML = originalButtonHTML;
-                    }, 1000);
-
-                } catch(pdfError){
-                    console.error("PDF Generation Error:", pdfError);
-                    showNotification('Gagal membuat PDF. Silakan coba lagi.');
+                } catch(error){
+                    console.error("Submission Process Error:", error);
+                    showNotification('Terjadi kesalahan tak terduga pada proses pengiriman.', true);
                     elements.submitBtn.innerHTML = originalButtonHTML;
                     elements.submitBtn.disabled = false;
                 }
-            });
-            
-            elements.closeModalBtn.addEventListener('click', () => {
-                elements.notificationModal.classList.add('hidden');
             });
         }
     </script>
