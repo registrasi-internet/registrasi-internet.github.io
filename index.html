@@ -3,519 +3,751 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registrasi Mudah! v2.1</title>
+    <title>Dasbor Registrasi</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        // Konfigurasi Tailwind untuk mode gelap
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        #image-preview { width: 100%; height: auto; max-height: 220px; object-fit: contain; border-radius: 0.5rem; }
-        input[type="file"] { display: none; }
-        #crop-modal .cropper-container { margin: auto; }
-        #image-to-crop { display: block; max-width: 100%; }
-        #critical-error-banner { display: none; background-color: #fef2f2; color: #991b1b; padding: 1rem; border: 1px solid #fecaca; border-radius: 0.5rem; text-align: center; }
-        .spinner { border: 2px solid #f3f3f3; border-top: 2px solid #1390d0; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; display: inline-block; margin-right: 8px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f3f4f6; /* bg-gray-100 */
+            transition: background-color 0.3s, color 0.3s;
+        }
+        /* Konfigurasi dasar mode gelap */
+        .dark body {
+            background-color: #0f172a; /* bg-slate-900 */
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #1390d0; /* Custom Blue */
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Toast Notification */
+        #toast-container {
+            position: fixed;
+            top: 1.25rem;
+            right: 1.25rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .toast {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease-in-out;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .toast-success { background-color: #dcfce7; color: #166534; border-left: 4px solid #22c55e; }
+        .toast-error { background-color: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
+
+        /* Sortable table header */
+        .sortable { cursor: pointer; user-select: none; }
+        .sortable:hover { background-color: #1075b0; }
+        
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            .responsive-table thead { display: none; }
+            .responsive-table tr {
+                display: block; margin-bottom: 1rem; border-radius: 0.75rem;
+                border: 1px solid #e5e7eb; background-color: #ffffff;
+                box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); padding: 0.5rem 0;
+            }
+            .dark .responsive-table tr { border-color: #334155; background-color: #1e293b; }
+            .responsive-table td {
+                display: flex; justify-content: space-between; align-items: center;
+                text-align: right; padding: 0.75rem 1rem; /* Reduced horizontal padding for mobile */
+                border-bottom: 1px solid #f3f4f6;
+            }
+            .dark .responsive-table td { border-bottom-color: #334155; }
+            .responsive-table td:last-child { border-bottom: 0; }
+            .responsive-table td::before {
+                content: attr(data-label); font-weight: 500; text-align: left;
+                margin-right: 1rem; color: #6b7280; flex-shrink: 0;
+            }
+            .dark .responsive-table td::before { color: #94a3b8; }
+            .responsive-table td .truncate, .responsive-table td .cell-content-stacked { 
+                white-space: normal; 
+                overflow: hidden;
+                text-overflow: clip;
+                word-break: break-word; /* Allow long words to break */
+                flex-grow: 1;
+            }
+            
+            .responsive-table td .cell-content-stacked {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+            }
+
+            .responsive-table td.action-cell {
+                justify-content: center; 
+                padding-top: 1rem;
+                padding-bottom: 0.5rem;
+            }
+            .responsive-table td.action-cell::before { display: none; }
+        }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 flex items-center justify-center min-h-screen p-4">
+<body class="text-gray-800 dark:text-slate-200">
 
-    <div class="w-full max-w-lg">
-        <div id="critical-error-banner"></div>
-        
-        <div id="app-content" class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 space-y-6">
-            <header class="text-center">
-                <h1 class="text-3xl font-bold text-[#1390d0] dark:text-sky-400">Registrasi Mudah!</h1>
-                <p class="text-gray-500 dark:text-gray-400 mt-2">Isi Formulir untuk kebutuhan Data Registrasi Internet</p>
-            </header>
+    <div id="toast-container"></div>
 
-            <form id="data-form" class="space-y-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Unggah Foto KTP</label>
-                    <div id="preview-area" class="w-full p-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-center hidden"><img id="image-preview" alt="Pratinjau KTP"></div>
-                    <label for="ktp-upload" id="upload-box" class="w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                        <svg class="w-10 h-10 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
-                        <span class="mt-2 text-sm text-gray-500 dark:text-gray-400">Klik untuk memilih gambar</span>
-                    </label>
-                    <input type="file" id="ktp-upload" accept="image/*">
-                    <p id="image-status" class="text-sm mt-2 text-center font-medium h-5"></p>
-                </div>
-
-                <div id="ocr-results" class="space-y-4 hidden">
+    <!-- Modals (Edit, Delete, KTP) -->
+    <div id="edit-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4 overflow-y-auto">
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 max-w-2xl w-full m-auto">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-6">Edit Data Pelanggan</h3>
+            <form id="edit-form" class="space-y-4">
+                <input type="hidden" id="edit-original-nik">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label for="nama" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nama Lengkap</label>
-                        <input type="text" id="nama" name="nama" readonly class="mt-1 block w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none text-gray-500 dark:text-gray-400" placeholder="Akan terisi otomatis...">
+                        <label for="edit-nama" class="block text-sm font-medium text-gray-600 dark:text-slate-300">Nama</label>
+                        <input type="text" id="edit-nama" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-[#1390d0] focus:border-[#1390d0] text-gray-900 dark:text-slate-100">
                     </div>
                     <div>
-                        <label for="nik" class="block text-sm font-medium text-gray-700 dark:text-gray-300">NIK</label>
-                        <input type="text" id="nik" name="nik" readonly class="mt-1 block w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none text-gray-500 dark:text-gray-400" placeholder="Akan terisi otomatis...">
+                        <label for="edit-nik" class="block text-sm font-medium text-gray-600 dark:text-slate-300">NIK</label>
+                        <input type="text" id="edit-nik" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-[#1390d0] focus:border-[#1390d0] text-gray-900 dark:text-slate-100">
                     </div>
                     <div>
-                        <label for="tglLahir" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tanggal Lahir</label>
-                        <input type="text" id="tglLahir" name="tglLahir" readonly class="mt-1 block w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none text-gray-500 dark:text-gray-400" placeholder="Akan terisi otomatis...">
+                        <label for="edit-tgl_lahir" class="block text-sm font-medium text-gray-600 dark:text-slate-300">Tanggal Lahir</label>
+                        <input type="text" id="edit-tgl_lahir" placeholder="DD-MM-YYYY" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-[#1390d0] focus:border-[#1390d0] text-gray-900 dark:text-slate-100">
+                    </div>
+                    <div>
+                        <label for="edit-whatsapp" class="block text-sm font-medium text-gray-600 dark:text-slate-300">No. WhatsApp</label>
+                        <input type="tel" id="edit-whatsapp" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-[#1390d0] focus:border-[#1390d0] text-gray-900 dark:text-slate-100">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="edit-email" class="block text-sm font-medium text-gray-600 dark:text-slate-300">Email</label>
+                        <input type="email" id="edit-email" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-[#1390d0] focus:border-[#1390d0] text-gray-900 dark:text-slate-100">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="edit-alamat" class="block text-sm font-medium text-gray-600 dark:text-slate-300">Alamat</label>
+                        <textarea id="edit-alamat" rows="2" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-[#1390d0] focus:border-[#1390d0] text-gray-900 dark:text-slate-100"></textarea>
+                    </div>
+                     <div>
+                        <label for="edit-paket_layanan" class="block text-sm font-medium text-gray-600 dark:text-slate-300">Paket Layanan</label>
+                        <input type="text" id="edit-paket_layanan" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-[#1390d0] focus:border-[#1390d0] text-gray-900 dark:text-slate-100">
+                    </div>
+                    <div>
+                        <label for="edit-catatan" class="block text-sm font-medium text-gray-600 dark:text-slate-300">Catatan</label>
+                        <input type="text" id="edit-catatan" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-[#1390d0] focus:border-[#1390d0] text-gray-900 dark:text-slate-100">
                     </div>
                 </div>
-
-                <div>
-                    <label for="whatsapp" class="block text-sm font-medium text-gray-700 dark:text-gray-300">No. WhatsApp</label>
-                    <input type="tel" id="whatsapp" name="whatsapp" required class="mt-1 block w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1390d0] text-gray-900 dark:text-white" placeholder="Contoh: 081234567890">
-                </div>
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                    <input type="email" id="email" name="email" required class="mt-1 block w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1390d0] text-gray-900 dark:text-white" placeholder="nama@email.com">
-                </div>
-                <div>
-                    <label for="alamat" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Alamat Lengkap Pemasangan</label>
-                    <textarea id="alamat" name="alamat" rows="3" required class="mt-1 block w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1390d0] text-gray-900 dark:text-white" placeholder="Masukkan alamat lengkap beserta No. Rumah Anda"></textarea>
-                </div>
-                <div>
-                    <label for="paket-layanan" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Paket Layanan</label>
-                    <select id="paket-layanan" name="paket-layanan" required class="mt-1 block w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1390d0] text-gray-900 dark:text-white">
-                        <option>Internet 50 Mbps</option>
-                        <option>Internet 100 Mbps</option>
-                        <option>Internet 150 Mbps</option>
-                        <option>Internet Gamers 200 Mbps</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="catatan" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Catatan (Opsional)</label>
-                    <textarea id="catatan" name="catatan" rows="2" class="mt-1 block w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1390d0] text-gray-900 dark:text-white" placeholder="Informasi tambahan."></textarea>
-                </div>
-                <div>
-                    <button type="submit" id="submit-btn" disabled class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-[#1390d0] hover:bg-[#1075b0] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors">
-                        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                           <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                        </svg>
-                        Kirim Data
+                <div class="pt-4 flex justify-end space-x-3">
+                    <button type="button" id="cancel-edit-btn" class="px-4 py-2 bg-gray-200 dark:bg-slate-600 text-gray-800 dark:text-slate-200 rounded-md hover:bg-gray-300 dark:hover:bg-slate-500 transition">Batal</button>
+                    <button type="submit" id="submit-edit-btn" class="flex items-center justify-center px-4 py-2 bg-[#1390d0] text-white font-semibold rounded-md hover:bg-[#1075b0] transition shadow-sm w-40">
+                        <span class="btn-text">Simpan</span>
+                        <svg class="animate-spin h-5 w-5 text-white hidden btn-spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     </button>
                 </div>
             </form>
         </div>
     </div>
+    <div id="delete-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4"></div>
+    <div id="ktp-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4"></div>
 
-    <!-- Modal for Cropping -->
-    <div id="crop-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-40 p-4"><div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-xl w-full"><h3 class="text-xl font-bold text-center text-gray-800 dark:text-white mb-4">Sesuaikan Frame KTP</h3><div class="img-container w-full h-64 md:h-80 mb-4"><img id="image-to-crop" src=""></div><div class="flex justify-between space-x-4"><button id="cancel-crop-btn" class="w-full bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-white py-2 rounded-lg hover:bg-gray-400 transition-colors">Batal</button><button id="crop-btn" class="w-full bg-[#1390d0] text-white py-2 rounded-lg hover:bg-[#1075b0] transition-colors">Potong & Gunakan</button></div></div></div>
-    
-    <!-- Modal for Notifications -->
-    <div id="notification-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4"><div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-sm mx-auto text-center"><p id="notification-message" class="text-lg text-gray-800 dark:text-white"></p><div id="modal-buttons" class="mt-4 flex flex-col sm:flex-row-reverse gap-3">
-        <button id="close-modal-btn" class="w-full bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors">Tutup</button>
-    </div></div></div>
+    <main class="container mx-auto p-2 sm:p-4 lg:p-8">
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg ring-1 ring-black/5 dark:ring-white/10 p-4 sm:p-6">
+            <!-- Judul Aplikasi -->
+            <h1 class="text-2xl font-bold text-[#1390d0] mb-6">Data Registrasi Internet</h1>
+            
+            <!-- Kontrol Utama -->
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                <div class="relative">
+                    <input type="text" id="search-input" placeholder="Cari data..." class="w-full md:w-80 pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#1390d0] transition">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="w-5 h-5 text-gray-400 dark:text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" /></svg>
+                    </div>
+                </div>
+                <div class="flex items-center justify-end flex-wrap gap-3">
+                    <button id="theme-toggle-btn" title="Ganti Tema" class="p-2 text-gray-500 dark:text-slate-400 hover:text-[#1390d0] hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                        <svg id="theme-toggle-dark-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                        <svg id="theme-toggle-light-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+                    </button>
+                    <a href="https://registrasi-internet.github.io/s-form.html" target="_blank" rel="noopener noreferrer" title="Tambah Data Baru" class="p-2 text-gray-500 dark:text-slate-400 hover:text-[#1390d0] hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6" />
+                        </svg>
+                    </a>
+                    <button id="filter-toggle-btn" title="Filter Data" class="p-2 text-gray-500 dark:text-slate-400 hover:text-[#1390d0] hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                    </button>
+                    <button id="export-csv-btn" title="Ekspor ke CSV" class="p-2 text-gray-500 dark:text-slate-400 hover:text-[#1390d0] hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                    </button>
+                    <button id="refresh-btn" title="Muat Ulang Data" class="p-2 text-gray-500 dark:text-slate-400 hover:text-[#1390d0] hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors disabled:cursor-wait">
+                        <svg id="refresh-icon" class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5m-5 2a9 9 0 0114.13-5.87L20 4m-4 8a9 9 0 01-14.13 5.87L4 20" />
+                        </svg>
+                        <svg id="refresh-spinner" class="w-6 h-6 animate-spin hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    </button>
+                    <button id="logout-btn" title="Keluar" class="p-2 text-gray-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-500 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <!-- Kontrol Filter -->
+            <div id="filter-controls" class="hidden bg-gray-50 dark:bg-slate-900/50 p-4 rounded-lg mt-4 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="filter-service" class="block text-sm font-medium text-gray-600 dark:text-slate-300">Paket Layanan</label>
+                        <select id="filter-service" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-slate-600 focus:outline-none focus:ring-[#1390d0] focus:border-[#1390d0] sm:text-sm rounded-md bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100"></select>
+                    </div>
+                    <div>
+                        <label for="filter-start-date" class="block text-sm font-medium text-gray-600 dark:text-slate-300">Dari Tanggal</label>
+                        <input type="date" id="filter-start-date" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm text-gray-900 dark:text-slate-100 dark:[color-scheme:dark]">
+                    </div>
+                    <div>
+                        <label for="filter-end-date" class="block text-sm font-medium text-gray-600 dark:text-slate-300">Sampai Tanggal</label>
+                        <input type="date" id="filter-end-date" class="mt-1 block w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm text-gray-900 dark:text-slate-100 dark:[color-scheme:dark]">
+                    </div>
+                </div>
+                <div class="mt-4 flex justify-end">
+                    <button id="clear-filters-btn" class="text-sm text-[#1390d0] hover:text-[#1075b0] dark:hover:text-sky-400">Bersihkan Filter</button>
+                </div>
+            </div>
+            <!-- Area Tabel Data -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full w-full responsive-table">
+                    <thead class="bg-[#1390d0]">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider sortable" data-sort="nama">Pelanggan</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Kontak</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Alamat</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider sortable" data-sort="paket_layanan">Layanan</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Catatan</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider sortable" data-sort="created_at">Tgl Registrasi</th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="data-table-body" class="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700"></tbody>
+                </table>
+            </div>
+            <!-- Paginasi -->
+            <div id="pagination-controls" class="flex items-center justify-between mt-4 px-2">
+                <span id="pagination-info" class="text-sm text-gray-500 dark:text-slate-400"></span>
+                <div class="flex gap-2">
+                    <button id="prev-page-btn" class="px-3 py-1 border border-gray-300 dark:border-slate-600 rounded-md text-sm hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed">Sebelumnya</button>
+                    <button id="next-page-btn" class="px-3 py-1 border border-gray-300 dark:border-slate-600 rounded-md text-sm hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed">Berikutnya</button>
+                </div>
+            </div>
+        </div>
+    </main>
 
     <script type="module">
+        // --- KONFIGURASI SUPABASE ---
+        const SUPABASE_URL = "https://chonburtllhuqjqkzujt.supabase.co"; 
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNob25idXJ0bGxodXFqcWt6dWp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1MjYwOTcsImV4cCI6MjA2NzEwMjA5N30.aTBKGaht3CwDwH4c9pqwGMb9wToeh8wuHYCrWul7D1c";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // --- MANAJEMEN AUTENTIKASI ---
+        (async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                // Ganti 'login.html' jika nama file Anda berbeda
+                window.location.href = 'login.html'; 
+            }
+        })();
+
+        // --- MANAJEMEN TEMA (MODE GELAP/TERANG) ---
+        (() => {
+            const themeToggleBtn = document.getElementById('theme-toggle-btn');
+            const darkIcon = document.getElementById('theme-toggle-dark-icon');
+            const lightIcon = document.getElementById('theme-toggle-light-icon');
+
+            const applyTheme = (theme) => {
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                    darkIcon.classList.remove('hidden');
+                    lightIcon.classList.add('hidden');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    darkIcon.classList.add('hidden');
+                    lightIcon.classList.remove('hidden');
+                }
+                localStorage.setItem('theme', theme);
+            };
+
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedTheme) {
+                applyTheme(savedTheme);
+            } else if (prefersDark) {
+                applyTheme('dark');
+            } else {
+                applyTheme('light');
+            }
+
+            themeToggleBtn.addEventListener('click', () => {
+                const currentTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+                applyTheme(currentTheme);
+            });
+        })();
+
+
         document.addEventListener('DOMContentLoaded', main);
 
         function main() {
             // --- KONFIGURASI ---
-            // URL Telah Diperbarui
-            const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzzGXkYF_R2ajMlh9KZBvhg2vG1kFugpHCx2ouOPOn4wZqvr9ukaBrvo5FpTe5nUmDl-A/exec";
-            const GEMINI_API_KEY = "AIzaSyDNbUhmTtdpftZq15MctBuicsGryUuq2d0"; 
-            
-            // --- KONSTANTA ---
-            const BLUR_THRESHOLD = 100;
+            const ROWS_PER_PAGE = 10;
 
-            // --- Elemen DOM ---
+            // --- ELEMEN DOM ---
             const elements = {
-                ktpUpload: document.getElementById('ktp-upload'),
-                nama: document.getElementById('nama'),
-                nik: document.getElementById('nik'),
-                tglLahir: document.getElementById('tglLahir'),
-                ocrResults: document.getElementById('ocr-results'),
-                imagePreview: document.getElementById('image-preview'),
-                imageStatus: document.getElementById('image-status'),
-                submitBtn: document.getElementById('submit-btn'),
-                dataForm: document.getElementById('data-form'),
-                uploadBox: document.getElementById('upload-box'),
-                previewArea: document.getElementById('preview-area'),
-                cropModal: document.getElementById('crop-modal'),
-                imageToCrop: document.getElementById('image-to-crop'),
-                cropBtn: document.getElementById('crop-btn'),
-                cancelCropBtn: document.getElementById('cancel-crop-btn'),
-                notificationModal: document.getElementById('notification-modal'),
-                notificationMessage: document.getElementById('notification-message'),
-                modalButtons: document.getElementById('modal-buttons'),
+                tableBody: document.getElementById('data-table-body'),
+                searchInput: document.getElementById('search-input'),
+                refreshBtn: document.getElementById('refresh-btn'),
+                refreshIcon: document.getElementById('refresh-icon'),
+                refreshSpinner: document.getElementById('refresh-spinner'),
+                logoutBtn: document.getElementById('logout-btn'),
+                // Modals
+                ktpModal: document.getElementById('ktp-modal'),
+                editModal: document.getElementById('edit-modal'),
+                deleteModal: document.getElementById('delete-modal'),
+                // Edit Form
+                editForm: document.getElementById('edit-form'),
+                cancelEditBtn: document.getElementById('cancel-edit-btn'),
+                submitEditBtn: document.getElementById('submit-edit-btn'),
+                // Pagination
+                paginationControls: document.getElementById('pagination-controls'),
+                paginationInfo: document.getElementById('pagination-info'),
+                prevPageBtn: document.getElementById('prev-page-btn'),
+                nextPageBtn: document.getElementById('next-page-btn'),
+                // Filters
+                filterToggleBtn: document.getElementById('filter-toggle-btn'),
+                filterControls: document.getElementById('filter-controls'),
+                filterService: document.getElementById('filter-service'),
+                filterStartDate: document.getElementById('filter-start-date'),
+                filterEndDate: document.getElementById('filter-end-date'),
+                clearFiltersBtn: document.getElementById('clear-filters-btn'),
+                // Export
+                exportCsvBtn: document.getElementById('export-csv-btn'),
+                // Toast
+                toastContainer: document.getElementById('toast-container'),
             };
 
-            let cropper, ktpImageBase64 = null;
+            // --- STATE APLIKASI ---
+            let currentData = [];
+            let recordToDelete = null;
+            let debounceTimeout;
+            let state = {
+                currentPage: 1,
+                totalRows: 0,
+                sort: { column: 'created_at', order: 'desc' },
+                filters: {
+                    search: '',
+                    service: '',
+                    startDate: '',
+                    endDate: ''
+                }
+            };
 
-            // --- Cek Pustaka ---
-            if (typeof Cropper === 'undefined' || typeof window.jspdf === 'undefined' || typeof qrcode === 'undefined') {
-                document.getElementById('critical-error-banner').textContent = `Pustaka penting gagal dimuat. Harap periksa koneksi dan muat ulang.`;
-                document.getElementById('critical-error-banner').style.display = 'block';
-                return;
+            // --- INISIALISASI ---
+            initialize();
+
+            function initialize() {
+                fetchRegistrations();
+                populateServiceFilter();
+                setupEventListeners();
             }
 
-            // --- FUNGSI-FUNGSI ---
+            // --- FUNGSI PENGAMBILAN DATA ---
+            async function fetchRegistrations() {
+                toggleLoading(true);
+                const from = (state.currentPage - 1) * ROWS_PER_PAGE;
+                const to = from + ROWS_PER_PAGE - 1;
 
-            const showCropper = (imageUrl) => {
-                elements.imageToCrop.src = imageUrl;
-                elements.cropModal.classList.remove('hidden');
-                if (cropper) cropper.destroy();
-                cropper = new Cropper(elements.imageToCrop, { 
-                    aspectRatio: 85.6 / 54, viewMode: 2, dragMode: 'move', 
-                    background: false, autoCropArea: 0.9 
-                });
-            };
-    
-            const resetApp = () => {
-                elements.dataForm.reset();
-                elements.ktpUpload.value = '';
-                if(cropper) cropper.destroy();
-                elements.cropModal.classList.add('hidden');
-                elements.previewArea.classList.add('hidden');
-                elements.uploadBox.classList.remove('hidden');
-                elements.imageStatus.textContent = '';
-                elements.submitBtn.disabled = true;
-                const originalButtonHTML = `<svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg> Simpan dan Selesaikan`;
-                elements.submitBtn.innerHTML = originalButtonHTML;
-                ktpImageBase64 = null;
-                elements.ocrResults.classList.add('hidden');
-                ['nama', 'nik', 'tglLahir', 'whatsapp', 'email', 'alamat', 'paket-layanan', 'catatan'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if(el) el.value = '';
-                });
-            };
+                let query = supabase
+                    .from('registrations')
+                    .select('*', { count: 'exact' });
 
-            const calculateBlurScore = (imageDataUrl) => {
-                return new Promise((resolve, reject) => { 
-                    const i = new Image(); 
-                    i.src = imageDataUrl; 
-                    i.onload = () => { 
-                        const c = document.createElement('canvas'), x = c.getContext('2d', { willReadFrequently: true }); 
-                        c.width = i.width; c.height = i.height; 
-                        x.drawImage(i, 0, 0); 
-                        const d = x.getImageData(0, 0, c.width, c.height); 
-                        const g = []; 
-                        for (let j = 0; j < d.data.length; j += 4) g.push(d.data[j] * 0.299 + d.data[j + 1] * 0.587 + d.data[j + 2] * 0.114);
-                        const l = [0, 1, 0, 1, -4, 1, 0, 1, 0]; 
-                        let s = 0, q = 0; const v = []; 
-                        for (let y = 1; y < c.height - 1; y++) for (let z = 1; z < c.width - 1; z++) { 
-                            let a = 0, k = 0; 
-                            for (let ky = -1; ky <= 1; ky++) for (let kx = -1; kx <= 1; kx++) a += g[(y + ky) * c.width + (z + kx)] * l[k++];
-                            v.push(a); s += a; q += a * a; 
-                        }
-                        const m = s / v.length; 
-                        resolve(q / v.length - m * m); 
-                    }; 
-                    i.onerror = reject; 
-                });
-            };
+                // Apply filters
+                if (state.filters.search) {
+                    const searchTerm = state.filters.search;
+                    query = query.or(
+                        `nama.ilike.%${searchTerm}%,` +
+                        `nik.ilike.%${searchTerm}%,` +
+                        `tgl_lahir.ilike.%${searchTerm}%,` +
+                        `whatsapp.ilike.%${searchTerm}%,` +
+                        `email.ilike.%${searchTerm}%,` +
+                        `alamat.ilike.%${searchTerm}%,` +
+                        `paket_layanan.ilike.%${searchTerm}%,` +
+                        `catatan.ilike.%${searchTerm}%`
+                    );
+                }
+                if (state.filters.service) {
+                    query = query.eq('paket_layanan', state.filters.service);
+                }
+                if (state.filters.startDate) {
+                    query = query.gte('created_at', state.filters.startDate);
+                }
+                if (state.filters.endDate) {
+                    const endDate = new Date(state.filters.endDate);
+                    endDate.setDate(endDate.getDate() + 1);
+                    query = query.lt('created_at', endDate.toISOString());
+                }
+
+                // Apply sorting and pagination
+                query = query
+                    .order(state.sort.column, { ascending: state.sort.order === 'asc' })
+                    .range(from, to);
+
+                try {
+                    const { data, error, count } = await query;
+                    if (error) throw error;
+                    
+                    currentData = data;
+                    state.totalRows = count;
+                    renderTable(currentData);
+                    renderPagination();
+                } catch (error) {
+                    console.error("Fetch Error:", error);
+                    showToast(`Gagal memuat data: ${error.message}`, 'error');
+                    elements.tableBody.innerHTML = `<tr><td colspan="7" class="text-center p-8 text-red-500 dark:text-red-400">Gagal memuat data. Periksa kebijakan RLS Anda.</td></tr>`;
+                } finally {
+                    toggleLoading(false);
+                }
+            }
             
-            const extractKtpData = async (base64ImageData) => {
-                if (!GEMINI_API_KEY || GEMINI_API_KEY === "GANTI_DENGAN_API_KEY_ANDA") {
-                    elements.imageStatus.innerHTML = `<span class="text-yellow-500">Fitur OCR non-aktif. Silakan isi data manual.</span>`;
-                    elements.ocrResults.classList.remove('hidden');
-                    ['nama', 'nik', 'tglLahir'].forEach(id => {
-                       const el = document.getElementById(id);
-                       el.readOnly = false;
-                       el.placeholder = `Masukkan ${id}`;
-                       el.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'text-gray-500', 'dark:text-gray-400');
-                       el.classList.add('bg-gray-50', 'dark:bg-gray-700', 'text-gray-900', 'dark:text-white');
-                    });
-                    elements.submitBtn.disabled = false;
+            async function populateServiceFilter() {
+                const { data, error } = await supabase.from('registrations').select('paket_layanan');
+                if (error) {
+                    console.error("Error fetching services:", error);
                     return;
                 }
+                const services = [...new Set(data.map(item => item.paket_layanan).filter(Boolean))];
+                elements.filterService.innerHTML = '<option value="">Semua Paket</option>';
+                services.sort().forEach(service => {
+                    const option = document.createElement('option');
+                    option.value = service;
+                    option.textContent = service;
+                    elements.filterService.appendChild(option);
+                });
+            }
 
-                elements.imageStatus.innerHTML = `<div class="spinner"></div><span>Mengekstrak data dari KTP...</span>`;
-                const prompt = `From the provided image of an Indonesian KTP (identity card), extract the following information and return it as a valid JSON object. 1. "nama": The full name. 2. "nik": The 16-digit NIK. 3. "tglLahir": The date of birth, formatted as DD-MM-YYYY. If a field is not found, return null for that specific field.`;
-                const payload = {
-                    contents: [{ parts: [ { text: prompt }, { inlineData: { mimeType: "image/jpeg", data: base64ImageData.split(',')[1] }}] }],
-                    generationConfig: { responseMimeType: "application/json" }
-                };
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`;
-                
-                try {
-                    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(`API request failed: ${errorData?.error?.message || 'Unknown API error.'}`);
-                    }
-                    const result = await response.json();
-                    if (!result.candidates?.[0]?.content?.parts?.[0]?.text) {
-                        throw new Error('Invalid response structure from API.');
-                    }
-                    const textContent = result.candidates[0].content.parts[0].text;
-                    const ocrData = JSON.parse(textContent);
-                    elements.nama.value = ocrData.nama || 'Tidak terdeteksi';
-                    elements.nik.value = ocrData.nik || 'Tidak terdeteksi';
-                    elements.tglLahir.value = ocrData.tglLahir || 'Tidak terdeteksi';
-                    elements.ocrResults.classList.remove('hidden');
-                    elements.imageStatus.innerHTML = `<span class="text-green-500">✓ Ekstraksi data berhasil.</span>`;
-                    elements.submitBtn.disabled = false;
-                } catch (error) {
-                    console.error("OCR Extraction Error:", error);
-                    ['nama', 'nik', 'tglLahir'].forEach(id => {
-                       const el = document.getElementById(id);
-                       el.value = '';
-                       el.readOnly = false;
-                       el.placeholder = `Gagal, isi manual`;
-                       el.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'text-gray-500', 'dark:text-gray-400');
-                       el.classList.add('bg-gray-50', 'dark:bg-gray-700', 'text-gray-900', 'dark:text-white');
-                    });
-                    elements.ocrResults.classList.remove('hidden');
-                    elements.imageStatus.innerHTML = `<span class="text-red-500">Gagal ekstrak data. Silakan isi manual.</span>`;
-                    elements.submitBtn.disabled = false;
+            // --- FUNGSI RENDER UI ---
+            function renderTable(registrations) {
+                elements.tableBody.innerHTML = '';
+                if (registrations.length === 0) {
+                    elements.tableBody.innerHTML = `<tr><td colspan="7" class="text-center p-12"><p class="text-gray-500 dark:text-slate-400">Tidak ada data yang cocok.</p></td></tr>`;
+                    return;
                 }
-            };
+                registrations.forEach(reg => {
+                    const tr = document.createElement('tr');
+                    tr.className = "group hover:bg-gray-50 dark:hover:bg-slate-700";
+                    tr.dataset.record = JSON.stringify(reg);
+
+                    const registrationDate = new Date(reg.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    const whatsappLink = formatWhatsAppLink(reg.whatsapp, reg.nama, reg.paket_layanan);
+
+                    tr.innerHTML = `
+                        <td class="px-6 py-4" data-label="Pelanggan"><div class="cell-content-stacked"><div class="text-sm font-medium text-gray-900 dark:text-white">${reg.nama || '-'}</div><div class="text-sm text-gray-500 dark:text-slate-400">${reg.nik || '-'}</div><div class="text-sm text-gray-500 dark:text-slate-400"> ${reg.tgl_lahir || '-'}</div></div></td>
+                        <td class="px-6 py-4" data-label="Kontak"><div class="cell-content-stacked space-y-1"><div class="flex items-center gap-2 text-sm text-gray-500 dark:text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 text-green-500 flex-shrink-0"><path fill-rule="evenodd" d="M12.5 2.5A2.5 2.5 0 0 0 10 0H6a2.5 2.5 0 0 0-2.5 2.5v11A2.5 2.5 0 0 0 6 16h4a2.5 2.5 0 0 0 2.5-2.5v-11ZM10.5 12h-5V4h5v8Z" clip-rule="evenodd" /></svg><a href="${whatsappLink}" target="_blank" rel="noopener noreferrer" class="hover:underline text-green-600 dark:text-green-400" title="Kirim pesan WhatsApp">${reg.whatsapp || '-'}</a></div><div class="flex items-center gap-2 text-sm text-gray-500 dark:text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 text-slate-400 flex-shrink-0"><path d="M2.5 3A1.5 1.5 0 0 0 1 4.5v7A1.5 1.5 0 0 0 2.5 13h11a1.5 1.5 0 0 0 1.5-1.5v-7A1.5 1.5 0 0 0 13.5 3h-11ZM2 4.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 .5.5v1.269l-5.245 3.497a1.5 1.5 0 0 1-1.51 0L2 5.769V4.5Zm11.5 8h-11a.5.5 0 0 1-.5-.5V6.31l5.022 3.348a2.5 2.5 0 0 0 2.516 0L14 6.31v6.19a.5.5 0 0 1-.5.5Z" /></svg><span>${reg.email || '-'}</span></div></div></td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400" data-label="Alamat"><div class="max-w-xs whitespace-normal" title="${reg.alamat || ''}">${reg.alamat || '-'}</div></td>
+                        <td class="px-6 py-4 text-sm font-medium text-gray-800 dark:text-slate-200" data-label="Layanan">${reg.paket_layanan || '-'}</td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400" data-label="Catatan"><div class="max-w-xs whitespace-normal" title="${reg.catatan || ''}">${reg.catatan || '-'}</div></td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400" data-label="Tgl Registrasi">${registrationDate}</td>
+                        <td class="px-6 py-4 text-center text-sm font-medium action-cell" data-label="Aksi">
+                            <div class="flex items-center justify-center space-x-1">
+                                <button class="copy-btn p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700" title="Salin Data">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-[#1390d0]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                    </svg>
+                                </button>
+                                <button class="view-ktp-btn p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700" title="Lihat KTP">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-[#1390d0]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </button>
+                                <button class="edit-btn p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700" title="Edit">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-[#1390d0]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </button>
+                                <button class="delete-btn p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700" title="Hapus">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-[#1390d0]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    elements.tableBody.appendChild(tr);
+                });
+            }
+
+            function renderPagination() {
+                const from = (state.currentPage - 1) * ROWS_PER_PAGE + 1;
+                const to = Math.min(from + ROWS_PER_PAGE - 1, state.totalRows);
+                elements.paginationInfo.textContent = `Menampilkan ${from}-${to} dari ${state.totalRows} data`;
+                elements.prevPageBtn.disabled = state.currentPage === 1;
+                elements.nextPageBtn.disabled = to >= state.totalRows;
+                elements.paginationControls.classList.toggle('hidden', state.totalRows <= ROWS_PER_PAGE);
+            }
+
+            // --- FUNGSI HELPER & AKSI ---
+            function toggleLoading(isLoading, button = elements.refreshBtn) {
+                button.disabled = isLoading;
+                if (button === elements.refreshBtn) {
+                    elements.refreshIcon.classList.toggle('hidden', isLoading);
+                    elements.refreshSpinner.classList.toggle('hidden', !isLoading);
+                } else if (button === elements.submitEditBtn) {
+                    button.querySelector('.btn-text').classList.toggle('hidden', isLoading);
+                    button.querySelector('.btn-spinner').classList.toggle('hidden', !isLoading);
+                }
+            }
             
-            const generatePdfAsBase64 = (data, recordId) => {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF('p', 'mm', 'a4');
-                const pageW = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight(), margin = 15;
-                let yPos;
+            function showToast(message, type = 'success') {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type === 'success' ? 'toast-success' : 'toast-error'}`;
+                toast.textContent = message;
+                elements.toastContainer.appendChild(toast);
+                setTimeout(() => {
+                    toast.classList.add('show');
+                }, 10);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 3000);
+                }, 3000);
+            }
 
-                const primaryColor = '#1390d0', secondaryColor = '#e7f5fe', textColor = '#374151', grayColor = '#6b7280', whiteColor = '#ffffff';
-
-                doc.setFillColor(primaryColor);
-                doc.rect(0, 0, pageW, 35, 'F');
-                doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(whiteColor);
-                doc.text('Bukti Pendaftaran', pageW - margin, 18, { align: 'right' });
-                doc.setFont('helvetica', 'normal'); doc.setFontSize(15);
-                doc.text('Wi-Fi Internet', pageW - margin, 25, { align: 'right' });
-
-                yPos = 45;
-                doc.setFontSize(10); doc.setTextColor(grayColor);
-                doc.text('ID Registrasi:', margin, yPos);
-                doc.setTextColor(textColor); doc.setFont('helvetica', 'bold');
-                doc.text(recordId, margin + 30, yPos);
-                doc.setTextColor(grayColor); doc.setFont('helvetica', 'normal');
-                doc.text('Tanggal Terbit:', pageW - margin - 45, yPos);
-                doc.setTextColor(textColor); doc.setFont('helvetica', 'bold');
-                doc.text(new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }), pageW - margin, yPos, { align: 'right' });
-
-                yPos += 10;
-                doc.setLineWidth(0.5); doc.setDrawColor(primaryColor);
-                doc.line(margin, yPos, pageW - margin, yPos);
-
-                const addDataRow = (y, label, value) => {
-                    if (!value) return y;
-                    doc.setFontSize(11); doc.setTextColor(grayColor); doc.setFont('helvetica', 'normal');
-                    doc.text(label, margin, y + 7);
-                    doc.setTextColor(textColor); doc.setFont('helvetica', 'bold');
-                    const valueLines = doc.splitTextToSize(value, pageW - margin * 2 - 55);
-                    doc.text(valueLines, margin + 55, y + 7);
-                    y += (valueLines.length * 5) + 8;
-                    doc.setLineWidth(0.2); doc.setDrawColor('#e5e7eb');
-                    doc.line(margin, y, pageW - margin, y);
-                    return y;
-                };
-
-                yPos += 5;
-                doc.setFillColor(secondaryColor);
-                doc.roundedRect(margin, yPos, pageW - (margin * 2), 10, 3, 3, 'F');
-                doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(primaryColor);
-                doc.text('DATA PEMOHON', margin + 5, yPos + 7);
-                yPos += 10;
-
-                yPos = addDataRow(yPos, 'Nama Lengkap', data.nama);
-                yPos = addDataRow(yPos, 'NIK', data.nik);
-                yPos = addDataRow(yPos, 'Tanggal Lahir', data.tglLahir);
-                yPos = addDataRow(yPos, 'Alamat Email', data.email);
-                yPos = addDataRow(yPos, 'No. WhatsApp', data.whatsapp);
-                yPos = addDataRow(yPos, 'Alamat Pemasangan', data.alamat);
-                yPos = addDataRow(yPos, 'Paket Layanan', data.paketLayanan);
-                yPos = addDataRow(yPos, 'Catatan', data.catatan);
-
-                yPos += 10;
-                doc.setFillColor(secondaryColor);
-                doc.roundedRect(margin, yPos, pageW - (margin * 2), 10, 3, 3, 'F');
-                doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(primaryColor);
-                doc.text('DOKUMEN & VERIFIKASI', margin + 5, yPos + 7);
-                yPos += 15;
-
-                doc.setFontSize(10); doc.setTextColor(grayColor);
-                doc.text('Foto KTP Terlampir:', margin, yPos);
-                yPos += 5;
-                // 'ktpImageBase64' di sini masih dalam bentuk data URI lengkap
-                doc.addImage(data.ktpImageBase64, 'JPEG', margin, yPos, 85.6, 54);
-                doc.setDrawColor(grayColor); doc.rect(margin, yPos, 85.6, 54, 'S');
-
-                const qr = qrcode(0, 'L'); qr.addData(recordId); qr.make();
-                const qrImgData = qr.createDataURL(4);
-                const qrX = pageW - margin - 35, qrY = yPos + 5;
-                doc.addImage(qrImgData, 'PNG', qrX, qrY, 30, 30);
-                doc.setFontSize(8); doc.setTextColor(grayColor);
-                doc.text('Pindai untuk Verifikasi', qrX + 15, qrY + 35, { align: 'center'});
-
-                yPos = pageH - 20;
-                doc.setDrawColor(primaryColor); doc.line(margin, yPos, pageW - margin, yPos);
-                yPos += 8;
-                doc.setFontSize(9); doc.setTextColor(grayColor); doc.setFont('helvetica', 'italic');
-                doc.text('Dokumen ini diterbitkan secara otomatis oleh sistem dan sah tanpa tanda tangan basah.', pageW/2, yPos, { align: 'center' });
-
-                return doc.output('datauristring');
-            };
-
-            const showNotification = (message, isError = false) => {
-                elements.notificationMessage.textContent = message;
-                const modalContent = elements.notificationModal.querySelector('.bg-white');
-                const modal = elements.notificationModal;
-                
-                elements.modalButtons.innerHTML = ''; 
-                
-                const closeButton = document.createElement('button');
-                closeButton.id = 'close-modal-btn';
-                closeButton.className = 'w-full bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors';
-                closeButton.textContent = 'Tutup';
-                closeButton.onclick = () => {
-                    modal.classList.add('hidden');
-                    if (!isError) {
-                        resetApp();
-                    }
-                };
-                elements.modalButtons.appendChild(closeButton);
-
-                modalContent.classList.remove('border-2', 'border-red-500', 'border-green-500');
-                if (isError) {
-                    modalContent.classList.add('border-2', 'border-red-500');
-                } else {
-                     modalContent.classList.add('border-2', 'border-green-500');
+            function formatWhatsAppLink(number, name, service) {
+                if (!number) return '#';
+                let cleanedNumber = number.replace(/\D/g, '');
+                if (cleanedNumber.startsWith('0')) {
+                    cleanedNumber = '62' + cleanedNumber.substring(1);
                 }
-                modal.classList.remove('hidden');
-            };
+                const message = `Halo ${name}`;
+                const encodedMessage = encodeURIComponent(message);
+                return `https://wa.me/${cleanedNumber}?text=${encodedMessage}`;
+            }
 
-            const submitToGoogleSheet = async (data) => {
-                if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("MASUKKAN_URL")) {
-                    console.error("Pengiriman data gagal: GOOGLE_SCRIPT_URL belum diatur.");
-                    showNotification("Konfigurasi sisi klien tidak lengkap. URL skrip belum diatur.", true);
-                    return { success: false, message: "URL Skrip belum diatur." };
-                }
-                
-                const sheetData = { ...data };
-                sheetData.timestamp = new Date().toISOString();
-                
+            function copyRecordToClipboard(record) {
+                const textToCopy = [
+                    `Nama: ${record.nama || '-'}`,
+                    `NIK: ${record.nik || '-'}`,
+                    `Tanggal Lahir: ${record.tgl_lahir || '-'}`,
+                    `No. WhatsApp: ${record.whatsapp || '-'}`,
+                    `Email: ${record.email || '-'}`,
+                    `Alamat: ${(record.alamat || '-').replace(/\n/g, ' ')}`,
+                    `Paket Layanan: ${record.paket_layanan || '-'}`,
+                    `Catatan: ${(record.catatan || '-').replace(/\n/g, ' ')}`,
+                    `Tanggal Registrasi: ${new Date(record.created_at).toLocaleString('id-ID')}`
+                ].join('\n');
+
+                const textArea = document.createElement("textarea");
+                textArea.value = textToCopy;
+                textArea.style.position = "fixed";
+                textArea.style.top = "-9999px";
+                textArea.style.left = "-9999px";
+                document.body.appendChild(textArea);
+                textArea.select();
                 try {
-                    const response = await fetch(GOOGLE_SCRIPT_URL, {
-                        method: 'POST',
-                        redirect: "follow",
-                        body: JSON.stringify(sheetData),
-                        headers: { "Content-Type": "text/plain;charset=utf-8" }
-                    });
-                    
-                    const result = await response.json();
-                    if (result.status === "success") {
-                         return { success: true, link: result.pdfLink };
-                    } else {
-                        return { success: false, message: result.message || `Server merespons dengan kesalahan.` };
-                    }
-
-                } catch (error) {
-                    console.error("Kesalahan Jaringan saat mengirim ke Google Sheet:", error);
-                    return { success: false, message: `Kesalahan jaringan: ${error.message}` };
+                    document.execCommand('copy');
+                    showToast('Data pelanggan berhasil disalin.', 'success');
+                } catch (err) {
+                    console.error('Gagal menyalin data: ', err);
+                    showToast('Gagal menyalin data.', 'error');
                 }
-            };
-            
-            // --- EVENT LISTENERS ---
+                document.body.removeChild(textArea);
+            }
 
-            elements.ktpUpload.addEventListener('change', (e) => {
-                const file = e.target.files[0]; if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (event) => showCropper(event.target.result);
-                reader.readAsDataURL(file);
-            });
-
-            elements.cancelCropBtn.addEventListener('click', resetApp);
-            
-            elements.cropBtn.addEventListener('click', async () => {
-                if (!cropper) return;
-                
-                elements.imageStatus.innerHTML = `<div class="spinner"></div><span>Menganalisis kualitas gambar...</span>`;
-                const highQualityCanvas = cropper.getCroppedCanvas({ width: 800, fillColor: '#fff' });
-                // Simpan KTP base64 lengkap untuk ditampilkan di pratinjau dan PDF
-                ktpImageBase64 = highQualityCanvas.toDataURL('image/jpeg', 0.9);
-                
-                const analysisCanvas = document.createElement('canvas'), analysisCtx = analysisCanvas.getContext('2d');
-                const analysisWidth = 200;
-                analysisCanvas.width = analysisWidth;
-                analysisCanvas.height = highQualityCanvas.height * (analysisWidth / highQualityCanvas.width);
-                analysisCtx.drawImage(highQualityCanvas, 0, 0, analysisCanvas.width, analysisCanvas.height);
-                const analysisImageDataUrl = analysisCanvas.toDataURL('image/jpeg');
-
-                elements.imagePreview.src = ktpImageBase64;
-                elements.uploadBox.classList.add('hidden');
-                elements.previewArea.classList.remove('hidden');
-                elements.cropModal.classList.add('hidden');
-                
-                try {
-                    const score = await calculateBlurScore(analysisImageDataUrl);
-                    if (score >= BLUR_THRESHOLD) {
-                        await extractKtpData(ktpImageBase64);
-                    } else {
-                        elements.imageStatus.innerHTML = `<span class="text-red-500">✗ Gambar buram! Harap unggah foto yang lebih jelas.</span>`;
-                        ktpImageBase64 = null; elements.submitBtn.disabled = true;
-                    }
-                } catch (error) {
-                    console.error("Image Analysis Error:", error);
-                    elements.imageStatus.innerHTML = `<span class="text-red-500">Gagal menganalisis gambar. Coba lagi.</span>`;
-                    ktpImageBase64 = null; elements.submitBtn.disabled = true;
-                }
-            });
-
-            elements.dataForm.addEventListener('submit', async (e) => {
+            async function handleUpdate(e) {
                 e.preventDefault();
-                if (!ktpImageBase64) {
-                    showNotification('Harap unggah gambar KTP yang valid.', true);
-                    return;
-                }
-
-                const originalButtonHTML = elements.submitBtn.innerHTML;
-                elements.submitBtn.disabled = true;
-                elements.submitBtn.innerHTML = `<div class="spinner"></div><span>Mengumpulkan data...</span>`;
-
-                const formData = {
-                    nama: elements.nama.value,
-                    nik: elements.nik.value,
-                    tglLahir: elements.tglLahir.value,
-                    whatsapp: document.getElementById('whatsapp').value,
-                    email: document.getElementById('email').value,
-                    alamat: document.getElementById('alamat').value,
-                    paketLayanan: document.getElementById('paket-layanan').value,
-                    catatan: document.getElementById('catatan').value,
-                    ktpImageBase64: ktpImageBase64 // Data URI lengkap untuk PDF
+                toggleLoading(true, elements.submitEditBtn);
+                const originalNik = document.getElementById('edit-original-nik').value;
+                const updatedData = {
+                    nama: document.getElementById('edit-nama').value, nik: document.getElementById('edit-nik').value,
+                    tgl_lahir: document.getElementById('edit-tgl_lahir').value, whatsapp: document.getElementById('edit-whatsapp').value,
+                    email: document.getElementById('edit-email').value, alamat: document.getElementById('edit-alamat').value,
+                    paket_layanan: document.getElementById('edit-paket_layanan').value, catatan: document.getElementById('edit-catatan').value,
                 };
-                
-                // --- PERUBAHAN: FORMAT ID REGISTRASI ---
-                // Menggunakan nomor WhatsApp sebagai ID unik.
-                const recordId = `REG-${formData.whatsapp.replace(/\D/g, '')}`;
-                formData.recordId = recordId;
 
-                try {
-                    elements.submitBtn.innerHTML = `<div class="spinner"></div><span>Membuat PDF...</span>`;
-                    const pdfBase64 = generatePdfAsBase64(formData, recordId);
+                const { error } = await supabase.from('registrations').update(updatedData).eq('nik', originalNik);
+                toggleLoading(false, elements.submitEditBtn);
 
-                    // Siapkan data untuk dikirim ke Google Script
-                    const payload = { ...formData };
-                    payload.pdfBase64 = pdfBase64.split(',')[1];
-                    payload.pdfFileName = `Bukti-Pendaftaran-${(payload.nama || 'user').replace(/\s/g, '-')}-${recordId}.pdf`;
-                    
-                    // Tambahkan data gambar KTP untuk diunggah
-                    payload.ktpImageBase64 = ktpImageBase64.split(',')[1]; // Hanya data base64
-                    payload.ktpImageFileName = `KTP-${(payload.nama || 'user').replace(/\s/g, '-')}-${recordId}.jpg`;
-                    
-
-                    elements.submitBtn.innerHTML = `<div class="spinner"></div><span>Menyimpan Data...</span>`;
-                    
-                    const sheetResult = await submitToGoogleSheet(payload);
-
-                    if (sheetResult.success) {
-                        showNotification(`Terima Kasih, Registrasi berhasil!`);
-                    } else {
-                        showNotification(`GAGAL menyimpan data. ${sheetResult.message || 'Silakan coba lagi.'}`, true);
-                    }
-                    elements.submitBtn.innerHTML = originalButtonHTML;
-                    elements.submitBtn.disabled = false;
-
-                } catch(error){
-                    console.error("Submission Process Error:", error);
-                    showNotification('Terjadi kesalahan tak terduga pada proses pengiriman.', true);
-                    elements.submitBtn.innerHTML = originalButtonHTML;
-                    elements.submitBtn.disabled = false;
+                if (error) {
+                    showToast(`Gagal memperbarui: ${error.message}`, 'error');
+                } else {
+                    showToast('Data berhasil diperbarui.', 'success');
+                    elements.editModal.classList.add('hidden');
+                    fetchRegistrations();
                 }
-            });
+            }
+
+            async function handleDelete() {
+                if (!recordToDelete) return;
+                const { nik } = recordToDelete;
+                const { error } = await supabase.from('registrations').delete().eq('nik', nik);
+
+                if (error) {
+                    showToast(`Gagal menghapus: ${error.message}`, 'error');
+                } else {
+                    showToast('Data berhasil dihapus.', 'success');
+                    elements.deleteModal.innerHTML = '';
+                    elements.deleteModal.classList.add('hidden');
+                    recordToDelete = null;
+                    fetchRegistrations();
+                }
+            }
+            
+            function exportToCSV() {
+                const headers = ['Nama', 'NIK', 'Tgl Lahir', 'WhatsApp', 'Email', 'Alamat', 'Paket Layanan', 'Catatan', 'Tgl Registrasi', 'URL KTP'];
+                const rows = currentData.map(reg => [ // Use currentData for export
+                    `"${(reg.nama || '').replace(/"/g, '""')}"`,
+                    `"${(reg.nik || '').replace(/"/g, '""')}"`,
+                    `"${(reg.tgl_lahir || '').replace(/"/g, '""')}"`,
+                    `"${(reg.whatsapp || '').replace(/"/g, '""')}"`,
+                    `"${(reg.email || '').replace(/"/g, '""')}"`,
+                    `"${(reg.alamat || '').replace(/"/g, '""')}"`,
+                    `"${(reg.paket_layanan || '').replace(/"/g, '""')}"`,
+                    `"${(reg.catatan || '').replace(/"/g, '""')}"`,
+                    `"${new Date(reg.created_at).toLocaleString('id-ID')}"`,
+                    `"${(reg.ktp_image_url || '').replace(/"/g, '""')}"`,
+                ]);
+                
+                const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `registrasi_${new Date().toISOString().slice(0,10)}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            // --- SETUP EVENT LISTENERS ---
+            function setupEventListeners() {
+                elements.refreshBtn.addEventListener('click', fetchRegistrations);
+                elements.exportCsvBtn.addEventListener('click', exportToCSV);
+                elements.logoutBtn.addEventListener('click', async () => {
+                    await supabase.auth.signOut();
+                    window.location.href = 'login.html'; // Redirect to login page
+                });
+
+                // Search with Debounce
+                elements.searchInput.addEventListener('input', (e) => {
+                    clearTimeout(debounceTimeout);
+                    debounceTimeout = setTimeout(() => {
+                        state.filters.search = e.target.value;
+                        state.currentPage = 1;
+                        fetchRegistrations();
+                    }, 300);
+                });
+                
+                // Table Actions (Copy, Edit, Delete, View KTP)
+                elements.tableBody.addEventListener('click', (e) => {
+                    const recordRow = e.target.closest('tr');
+                    if (!recordRow || !recordRow.dataset.record) return;
+                    const record = JSON.parse(recordRow.dataset.record);
+                    if (e.target.closest('.copy-btn')) copyRecordToClipboard(record);
+                    if (e.target.closest('.edit-btn')) showModal('edit', record);
+                    if (e.target.closest('.delete-btn')) showModal('delete', record);
+                    if (e.target.closest('.view-ktp-btn')) showModal('ktp', record);
+                });
+
+                // Sorting
+                document.querySelectorAll('.sortable').forEach(header => {
+                    header.addEventListener('click', () => {
+                        const column = header.dataset.sort;
+                        if (state.sort.column === column) {
+                            state.sort.order = state.sort.order === 'asc' ? 'desc' : 'asc';
+                        } else {
+                            state.sort.column = column;
+                            state.sort.order = 'asc';
+                        }
+                        fetchRegistrations();
+                    });
+                });
+
+                // Pagination
+                elements.prevPageBtn.addEventListener('click', () => { if (state.currentPage > 1) { state.currentPage--; fetchRegistrations(); } });
+                elements.nextPageBtn.addEventListener('click', () => { if (state.currentPage * ROWS_PER_PAGE < state.totalRows) { state.currentPage++; fetchRegistrations(); } });
+
+                // Filters
+                elements.filterToggleBtn.addEventListener('click', () => elements.filterControls.classList.toggle('hidden'));
+                elements.filterService.addEventListener('change', (e) => { state.filters.service = e.target.value; state.currentPage = 1; fetchRegistrations(); });
+                elements.filterStartDate.addEventListener('change', (e) => { state.filters.startDate = e.target.value; state.currentPage = 1; fetchRegistrations(); });
+                elements.filterEndDate.addEventListener('change', (e) => { state.filters.endDate = e.target.value; state.currentPage = 1; fetchRegistrations(); });
+                elements.clearFiltersBtn.addEventListener('click', () => {
+                    elements.filterService.value = '';
+                    elements.filterStartDate.value = '';
+                    elements.filterEndDate.value = '';
+                    state.filters.service = '';
+                    state.filters.startDate = '';
+                    state.filters.endDate = '';
+                    fetchRegistrations();
+                });
+
+                // Modal Controls
+                elements.editForm.addEventListener('submit', handleUpdate);
+                elements.cancelEditBtn.addEventListener('click', () => elements.editModal.classList.add('hidden'));
+            }
+            
+            function showModal(type, record) {
+                let modal, content;
+                switch (type) {
+                    case 'edit':
+                        document.getElementById('edit-original-nik').value = record.nik;
+                        document.getElementById('edit-nama').value = record.nama || '';
+                        document.getElementById('edit-nik').value = record.nik || '';
+                        document.getElementById('edit-tgl_lahir').value = record.tgl_lahir || '';
+                        document.getElementById('edit-whatsapp').value = record.whatsapp || '';
+                        document.getElementById('edit-email').value = record.email || '';
+                        document.getElementById('edit-alamat').value = record.alamat || '';
+                        document.getElementById('edit-paket_layanan').value = record.paket_layanan || '';
+                        document.getElementById('edit-catatan').value = record.catatan || '';
+                        elements.editModal.classList.remove('hidden');
+                        break;
+                    case 'delete':
+                        recordToDelete = record;
+                        modal = elements.deleteModal;
+                        content = `<div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 max-w-sm w-full text-center"><div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-800/50"><svg class="h-6 w-6 text-red-600 dark:text-red-400" stroke="currentColor" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div><h3 class="text-lg font-medium text-gray-900 dark:text-white mt-5">Hapus Data</h3><p class="mt-2 text-sm text-gray-500 dark:text-slate-400">Yakin ingin menghapus data untuk <strong>${record.nama}</strong>? Tindakan ini tidak dapat dibatalkan.</p><div class="mt-6 flex justify-center space-x-3"><button class="modal-cancel-btn px-4 py-2 bg-gray-200 dark:bg-slate-600 text-gray-800 dark:text-slate-200 rounded-md hover:bg-gray-300 dark:hover:bg-slate-500 transition">Batal</button><button class="modal-confirm-delete-btn px-4 py-2 bg-red-600 text-white font-semibold rounded-md hover:bg-red-700 transition">Ya, Hapus</button></div></div>`;
+                        modal.innerHTML = content;
+                        modal.classList.remove('hidden');
+                        modal.querySelector('.modal-cancel-btn').addEventListener('click', () => modal.classList.add('hidden'));
+                        modal.querySelector('.modal-confirm-delete-btn').addEventListener('click', handleDelete);
+                        break;
+                    case 'ktp':
+                        modal = elements.ktpModal;
+                        content = `<div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 max-w-lg w-full relative"><button class="modal-cancel-btn absolute top-3 right-3 text-gray-400 hover:text-gray-800 dark:hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button><h3 class="text-xl font-bold mb-4 text-gray-900 dark:text-white">KTP: ${record.nama}</h3><div class="w-full h-64 bg-gray-200 dark:bg-slate-700 rounded-md flex items-center justify-center"><img src="${record.ktp_image_url || ''}" class="max-w-full max-h-full object-contain" onerror="this.parentElement.innerHTML = '<span class=\'text-gray-500 dark:text-slate-400\'>Gambar Tidak Tersedia</span>';"></div></div>`;
+                        modal.innerHTML = content;
+                        modal.classList.remove('hidden');
+                        modal.querySelector('.modal-cancel-btn').addEventListener('click', () => modal.classList.add('hidden'));
+                        break;
+                }
+            }
         }
     </script>
 </body>
