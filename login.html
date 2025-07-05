@@ -3,60 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Dasbor Registrasi</title>
+    <title>Login Admin - Dasbor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+        }
+        .bg-gradient-custom {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #3b82f6 100%);
+        }
     </style>
 </head>
 <body class="bg-slate-100">
-    <div class="flex items-center justify-center min-h-screen">
-        <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
-            <h1 class="text-2xl font-bold text-center text-gray-900">Login Dasbor</h1>
-            <form id="login-form" class="space-y-6">
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700">Alamat Email</label>
-                    <input id="email" name="email" type="email" required class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#1390d0] focus:border-[#1390d0]">
-                </div>
-                <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700">Kata Sandi</label>
-                    <input id="password" name="password" type="password" required class="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#1390d0] focus:border-[#1390d0]">
-                </div>
-                <div id="error-message" class="text-sm text-red-600"></div>
-                <div>
-                    <button type="submit" class="w-full px-4 py-2 font-semibold text-white bg-[#1390d0] rounded-md hover:bg-[#1075b0] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1390d0]">
-                        Masuk
-                    </button>
-                </div>
-            </form>
+    <div class="flex min-h-screen">
+        <!-- Kolom Kiri (Branding) -->
+        <div class="hidden lg:flex lg:w-1/2 bg-gradient-custom items-center justify-center p-12 text-white">
+            <div class="max-w-md text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <h2 class="text-3xl font-bold mb-4">Selamat Datang Kembali</h2>
+                <p class="text-lg opacity-80">Dasbor ini memberikan Anda kendali penuh untuk mengelola data registrasi dengan efisien dan aman.</p>
+            </div>
+        </div>
+
+        <!-- Kolom Kanan (Form Login) -->
+        <div class="w-full lg:w-1/2 flex items-center justify-center bg-white p-8">
+            <div class="w-full max-w-sm">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Login Admin</h1>
+                <p class="text-gray-600 mb-8">Silakan masukkan kata sandi Anda untuk melanjutkan.</p>
+                <form id="login-form" class="space-y-6">
+                    <div class="relative">
+                        <label for="password" class="block text-sm font-medium text-gray-700 sr-only">Kata Sandi</label>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute top-1/2 -translate-y-1/2 left-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="Kata Sandi" class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1390d0] focus:border-transparent">
+                    </div>
+                    <div id="error-message" class="text-sm text-red-600 min-h-[1.25rem]"></div>
+                    <div>
+                        <button type="submit" id="submit-btn" class="w-full flex justify-center items-center px-4 py-3 font-semibold text-white bg-[#1390d0] rounded-lg hover:bg-[#1075b0] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1390d0] transition-all duration-300 shadow-lg hover:shadow-xl">
+                            <span class="btn-text">Masuk</span>
+                            <svg class="animate-spin h-5 w-5 text-white hidden btn-spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
     <script type="module">
+        // --- KONFIGURASI PENTING ---
+        // Ganti dengan URL dan Kunci Anon Supabase Anda
         const SUPABASE_URL = "https://chonburtllhuqjqkzujt.supabase.co"; 
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNob25idXJ0bGxodXFqcWt6dWp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1MjYwOTcsImV4cCI6MjA2NzEwMjA5N30.aTBKGaht3CwDwH4c9pqwGMb9wToeh8wuHYCrWul7D1c";
+        
+        // GANTI DENGAN EMAIL ADMIN ANDA YANG TERDAFTAR DI SUPABASE
+        const ADMIN_EMAIL = 'kazien21@gmail.com.com'; 
+
+        // --- Inisialisasi Supabase ---
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // --- Elemen DOM ---
         const loginForm = document.getElementById('login-form');
         const errorMessage = document.getElementById('error-message');
+        const submitBtn = document.getElementById('submit-btn');
+        const btnText = submitBtn.querySelector('.btn-text');
+        const btnSpinner = submitBtn.querySelector('.btn-spinner');
 
+        // --- Logika Login ---
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // Tampilkan spinner dan nonaktifkan tombol
             errorMessage.textContent = '';
-            const email = e.target.email.value;
+            btnText.classList.add('hidden');
+            btnSpinner.classList.remove('hidden');
+            submitBtn.disabled = true;
+
             const password = e.target.password.value;
 
+            // Coba login dengan email yang sudah di-hardcode dan password dari input
             const { error } = await supabase.auth.signInWithPassword({
-                email: email,
+                email: ADMIN_EMAIL,
                 password: password,
             });
 
             if (error) {
-                errorMessage.textContent = 'Login gagal: ' + error.message;
+                errorMessage.textContent = 'Login gagal: Kata sandi salah.';
+                // Kembalikan tombol ke keadaan normal
+                btnText.classList.remove('hidden');
+                btnSpinner.classList.add('hidden');
+                submitBtn.disabled = false;
             } else {
-                // Ganti 'index.html' dengan nama file dasbor Anda
+                // Jika berhasil, arahkan ke halaman dasbor
+                // Ganti 'index.html' dengan nama file dasbor Anda jika berbeda
                 window.location.href = 'index.html'; 
             }
         });
