@@ -162,12 +162,17 @@
             <!-- Kontrol Utama -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div class="relative w-full">
-                    <input type="text" id="search-input" placeholder="Cari di semua kolom..." class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1390d0] transition">
+                    <input type="text" id="search-input" placeholder="Cari data..." class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1390d0] transition">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" /></svg>
                     </div>
                 </div>
                 <div class="flex items-center justify-end gap-3">
+                    <a href="https://registrasi-internet.github.io/s-form.html" target="_blank" rel="noopener noreferrer" title="Tambah Data Baru" class="p-2 text-gray-500 hover:text-[#1390d0] hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6" />
+                        </svg>
+                    </a>
                     <button id="filter-toggle-btn" class="p-2 text-gray-500 hover:text-[#1390d0] hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -241,7 +246,7 @@
             // --- KONFIGURASI ---
             const SUPABASE_URL = "https://chonburtllhuqjqkzujt.supabase.co"; 
             const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNob25idXJ0bGxodXFqcWt6dWp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1MjYwOTcsImV4cCI6MjA2NzEwMjA5N30.aTBKGaht3CwDwH4c9pqwGMb9wToeh8wuHYCrWul7D1c";
-            const ROWS_PER_PAGE = 20;
+            const ROWS_PER_PAGE = 10;
 
             // --- ELEMEN DOM ---
             const elements = {
