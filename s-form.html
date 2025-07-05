@@ -20,7 +20,6 @@
         .spinner { border: 2px solid #f3f3f3; border-top: 2px solid #1390d0; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; display: inline-block; margin-right: 8px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* **PERBAIKAN**: Style baru untuk notifikasi profesional */
         .summary-list {
             background-color: #f9fafb; /* bg-gray-50 */
             border-radius: 0.5rem; /* rounded-lg */
@@ -71,13 +70,22 @@
             </header>
 
             <form id="data-form" class="space-y-6">
-                <!-- Bagian Unggah KTP -->
+                <!-- **PERBAIKAN**: Area Unggah KTP Baru -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Unggah Foto KTP</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Upload Foto KTP</label>
                     <div id="preview-area" class="w-full p-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-center hidden"><img id="image-preview" alt="Pratinjau KTP"></div>
-                    <label for="ktp-upload" id="upload-box" class="w-full h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                        <svg class="w-10 h-10 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
-                        <span class="mt-2 text-sm text-gray-500 dark:text-gray-400">Klik untuk memilih gambar</span>
+                    <label for="ktp-upload" id="upload-box" class="w-full p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        <!-- Ikon Bingkai KTP -->
+                        <svg class="w-24 h-auto text-gray-400 mb-3" viewBox="0 0 86 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="1" y="1" width="84" height="52" rx="4" stroke="currentColor" stroke-width="2"/>
+                            <rect x="58" y="7" width="20" height="25" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M8 12H40" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M8 18H40" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M8 24H35" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M8 30H30" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                        <span class="font-semibold text-gray-500 dark:text-gray-300">Upload Foto KTP</span>
+                        <span class="mt-1 text-xs text-gray-500 dark:text-gray-400">Pastikan foto terlihat jelas dan tidak buram</span>
                     </label>
                     <input type="file" id="ktp-upload" accept="image/*">
                     <p id="image-status" class="text-sm mt-2 text-center font-medium h-5"></p>
@@ -140,7 +148,7 @@
     <!-- Modal for Cropping -->
     <div id="crop-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-40 p-4"><div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-xl w-full"><h3 class="text-xl font-bold text-center text-gray-800 dark:text-white mb-4">Sesuaikan Frame KTP</h3><div class="img-container w-full h-64 md:h-80 mb-4"><img id="image-to-crop" src=""></div><div class="flex justify-between space-x-4"><button id="cancel-crop-btn" class="w-full bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-white py-2 rounded-lg hover:bg-gray-400 transition-colors">Batal</button><button id="crop-btn" class="w-full bg-[#1390d0] text-white py-2 rounded-lg hover:bg-[#1075b0] transition-colors">Potong & Gunakan</button></div></div></div>
     
-    <!-- **PERBAIKAN**: Struktur Modal Notifikasi Baru -->
+    <!-- Modal Notifikasi Profesional -->
     <div id="notification-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 sm:p-8 max-w-md w-full">
             <div id="notification-content">
@@ -342,7 +350,6 @@
                 }
             };
             
-            // **PERBAIKAN**: Fungsi notifikasi yang telah diperbarui
             const showNotification = (mainMessage, subMessage, data = null, isError = false) => {
                 let iconHtml = '';
                 if (isError) {
