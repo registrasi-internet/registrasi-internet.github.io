@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- Tambahkan class 'dark' di sini jika mode gelap aktif -->
 <html lang="id">
 <head>
     <meta charset="UTF-8">
@@ -20,7 +19,6 @@
         }
     </script>
 </head>
-<!-- Ganti warna latar belakang untuk mode terang dan gelap -->
 <body class="bg-slate-50 dark:bg-gray-900 transition-colors duration-300">
     <div class="flex flex-col items-center justify-center min-h-screen p-4">
 
@@ -29,27 +27,27 @@
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 sr-only">Kata Sandi</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-                            <!-- Ganti warna ikon untuk mode gelap -->
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                             </svg>
                         </span>
-                        <!-- Ganti style input untuk mode gelap -->
-                        <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="Password" class="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1390d0] focus:border-transparent transition">
+                        <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="Masukkan Kata Sandi" class="w-full pl-10 pr-12 py-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1390d0] focus:border-transparent transition">
+                        <button type="submit" class="absolute inset-y-0 right-0 flex items-center pr-3.5 group" aria-label="Masuk">
+                           <svg class="h-6 w-6 text-gray-400 group-hover:text-[#1390d0] dark:text-gray-500 dark:group-hover:text-[#1390d0] transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                           </svg>
+                        </button>
                     </div>
                 </div>
 
                 <div class="space-y-3 pt-2">
-                    <!-- Ganti warna teks pesan error/sukses untuk mode gelap -->
                     <div id="error-message" class="text-sm text-center text-red-600 dark:text-red-500 min-h-[1.25rem]"></div>
                     <div id="success-message" class="text-sm text-center text-green-600 dark:text-green-500 min-h-[1.25rem]"></div>
 
-                    <!-- Tombol Masuk dihapus. Login dilakukan dengan menekan Enter. -->
-
                     <div class="text-center text-sm pt-2">
-                        <!-- Ganti warna link untuk mode gelap -->
-                        <a href="#" id="forgot-password-link" class="font-medium text-gray-500 dark:text-gray-400 hover:text-[#1075b0] dark:hover:text-[#1390d0]">Lupa Password?</a>
+                        <a href="#" id="forgot-password-link" class="font-medium text-gray-500 dark:text-gray-400 hover:text-[#1075b0] dark:hover:text-[#1390d0]">Lupa Kata Sandi?</a>
                     </div>
                 </div>
             </form>
@@ -59,11 +57,8 @@
 
     <script type="module">
         // --- KONFIGURASI PENTING ---
-        // Ganti dengan URL dan Kunci Anon Supabase Anda
         const SUPABASE_URL = "https://chonburtllhuqjqkzujt.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNob25idXJ0bGxodXFqcWt6dWp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1MjYwOTcsImV4cCI6MjA2NzEwMjA5N30.aTBKGaht3CwDwH4c9pqwGMb9wToeh8wuHYCrWul7D1c";
-
-        // GANTI DENGAN EMAIL ADMIN ANDA YANG TERDAFTAR DI SUPABASE
         const ADMIN_EMAIL = 'kazien21@gmail.com';
 
         // --- Inisialisasi Supabase ---
@@ -71,31 +66,65 @@
 
         // --- Elemen DOM ---
         const loginForm = document.getElementById('login-form');
+        const passwordInput = document.getElementById('password'); // Ambil elemen input password
         const errorMessage = document.getElementById('error-message');
         const successMessage = document.getElementById('success-message');
         const forgotPasswordLink = document.getElementById('forgot-password-link');
+        let debounceTimer;
 
         // --- Logika Login ---
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
 
-            errorMessage.textContent = '';
-            successMessage.textContent = '';
+        // Fungsi inti untuk mencoba login, mengembalikan true jika berhasil
+        async function attemptLogin(password) {
+            if (!password) return false;
 
-            const password = e.target.password.value;
-
-            // Coba login dengan email yang sudah di-hardcode dan password dari input
             const { error } = await supabase.auth.signInWithPassword({
                 email: ADMIN_EMAIL,
                 password: password,
             });
 
-            if (error) {
-                errorMessage.textContent = 'Login gagal: Kata sandi salah.';
-            } else {
-                // Jika berhasil, arahkan ke halaman dasbor
-                // Ganti 'index.html' dengan nama file dasbor Anda jika berbeda
+            return !error; // Mengembalikan true jika tidak ada error, false jika ada
+        }
+        
+        // 1. LOGIN OTOMATIS SAAT MENGETIK
+        passwordInput.addEventListener('input', () => {
+            clearTimeout(debounceTimer); // Reset timer setiap kali ada input baru
+            errorMessage.textContent = '';
+            successMessage.textContent = '';
+
+            const currentPassword = passwordInput.value;
+
+            // Jangan lakukan apa-apa jika input kosong
+            if (!currentPassword) return;
+
+            // Atur timer baru. Upaya login akan dilakukan 750ms setelah pengguna berhenti mengetik.
+            debounceTimer = setTimeout(async () => {
+                const isSuccess = await attemptLogin(currentPassword);
+                if (isSuccess) {
+                    successMessage.textContent = 'Login berhasil, mengalihkan...';
+                    // Ganti 'index.html' dengan halaman tujuan Anda jika berbeda
+                    window.location.href = 'index.html'; 
+                }
+                // Jika gagal, jangan tampilkan pesan error agar tidak mengganggu pengguna yang mungkin masih mengetik
+            }, 750); // Anda bisa menyesuaikan waktu tunda ini (dalam milidetik)
+        });
+
+        // 2. LOGIN MANUAL (saat menekan Enter atau klik ikon panah) - sebagai fallback
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Mencegah halaman refresh
+
+            errorMessage.textContent = '';
+            successMessage.textContent = 'Memeriksa...';
+            const password = passwordInput.value;
+            
+            const isSuccess = await attemptLogin(password);
+
+            if (isSuccess) {
+                successMessage.textContent = 'Login berhasil, mengalihkan...';
                 window.location.href = 'index.html';
+            } else {
+                successMessage.textContent = '';
+                errorMessage.textContent = 'Login gagal: Kata sandi salah.';
             }
         });
 
@@ -122,7 +151,6 @@
 
     <script>
         // --- Logika Mode Gelap/Terang Otomatis ---
-        // Fungsi untuk menerapkan tema berdasarkan preferensi
         function applyTheme(isDark) {
             if (isDark) {
                 document.documentElement.classList.add('dark');
@@ -130,12 +158,8 @@
                 document.documentElement.classList.remove('dark');
             }
         }
-
-        // Periksa preferensi saat halaman dimuat
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
         applyTheme(prefersDark.matches);
-
-        // Dengarkan perubahan preferensi sistem
         prefersDark.addEventListener('change', (e) => {
             applyTheme(e.matches);
         });
